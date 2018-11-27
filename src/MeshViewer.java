@@ -92,7 +92,7 @@ public class MeshViewer extends PApplet {
 
 		public void calculateDistance(Vertex<Point_3> source, Vertex<Point_3> destination) {
 			continuousDijsktra.buildDistances(source);
-			double distance = continuousDijsktra.calculateDistance(destination);
+			double distance = continuousDijsktra.calculateDistance(destination.getPoint());
 
 			System.out.printf("Calculated distance is %f\n", distance);
 		}
