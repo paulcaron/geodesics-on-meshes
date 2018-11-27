@@ -3,11 +3,11 @@ import Jcg.geometry.*;
 
 public class Window implements Comparable<Window> {
 	private double
-			begin,	/* begin of window */
-			end,	/* end of window */
-			distBegin, /* distance from begin to (pseudo)source */
-			distEnd, /* distance from end to (pseudo)source */
-			distSource; /* distance from source to pseudosource */
+			begin,	/* begining of window (b0 in the article) */
+			end,	/* end of window (b1 in the article) */
+			distBegin, /* distance from begin to (pseudo)source (d0 in the article) */
+			distEnd, /* distance from end to (pseudo)source (d1 in the article) */
+			distSource; /* distance from source to pseudosource (sigma in the article) */
 
 	private Halfedge<Point_3> halfedge; /* halfedge corresponding to window */
 
@@ -16,7 +16,7 @@ public class Window implements Comparable<Window> {
  	 * the (pseudo)source passing through the
  	 * face containing this halfedge?
  	 */
-	private boolean side;
+	private boolean side; /* (tau in the article) */
 
 	public Window(
 			double begin,
@@ -44,11 +44,12 @@ public class Window implements Comparable<Window> {
 	}
 
 	private boolean isAcuteTriangle() {
-		return true;
+		return !((end-begin)*(end-begin) + distBegin*distBegin > distSource*distSource || (end-begin)*(end-begin) + distSource*distSource > distBegin*distBegin);
 	}
 
 	private double height() {
-		return 0;
+		double p = (end-begin + distBegin + distEnd) / 2;
+		return 2*Math.sqrt(p*(p-(end-begin))*(p-distBegin)*(p-distEnd))/(end-begin);
 	}
 
 	public int compareTo(Window other) {
