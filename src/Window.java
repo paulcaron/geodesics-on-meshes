@@ -35,6 +35,26 @@ public class Window implements Comparable<Window> {
 		this.halfedge = halfedge;
 		this.side = side;
 	}
+	
+	public double getBegin(){
+		return this.begin;
+	}
+	public double getEnd(){
+		return this.end;
+	}
+	public double getDistBegin(){
+		return this.distBegin;
+	}
+	public double getDistEnd(){
+		return this.distEnd;
+	}
+	public boolean getside(){
+		return this.side;
+	}
+	
+	public Halfedge<Point_3> getHalfedge(){
+		return this.halfedge;
+	}
 
 	public double minimumDistance() {
 		if (isAcuteTriangle())
@@ -61,5 +81,9 @@ public class Window implements Comparable<Window> {
 			return 1;
 		else
 			return 0;
+	}
+	
+	public Point_3 computeSource() {
+		return new Point_3(); // to complete
 	}
 }
