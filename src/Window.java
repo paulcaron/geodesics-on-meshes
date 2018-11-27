@@ -48,7 +48,8 @@ public class Window implements Comparable<Window> {
 	}
 
 	private double height() {
-		return 0;
+		double p = (end-begin + distBegin + distEnd) / 2;
+		return 2*Math.sqrt(p*(p-(end-begin))*(p-distBegin)*(p-distEnd))/(end-begin);
 	}
 
 	public int compareTo(Window other) {
