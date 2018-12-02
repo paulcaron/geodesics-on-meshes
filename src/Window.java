@@ -36,23 +36,31 @@ public class Window implements Comparable<Window> {
 		this.side = side;
 	}
 	
-	public double getBegin(){
+	public double getBegin() {
 		return this.begin;
 	}
-	public double getEnd(){
+
+	public double getEnd() {
 		return this.end;
 	}
-	public double getDistBegin(){
+
+	public double getDistBegin() {
 		return this.distBegin;
 	}
-	public double getDistEnd(){
+
+	public double getDistEnd() {
 		return this.distEnd;
 	}
-	public boolean getside(){
+
+	public double getDistSource() {
+		return this.distSource;
+	}
+
+	public boolean getSide() {
 		return this.side;
 	}
 	
-	public Halfedge<Point_3> getHalfedge(){
+	public Halfedge<Point_3> getHalfedge() {
 		return this.halfedge;
 	}
 

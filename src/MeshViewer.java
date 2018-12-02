@@ -31,7 +31,7 @@ public class MeshViewer extends PApplet {
 		  ArcBall arcball = new ArcBall(this);
 		  
 		  this.mesh=new SurfaceMesh(this, filename);
-		  this.ms=new EdgeContraction(this.mesh.polyhedron3D);
+		  this.ms=new EdgeContraction(this.mesh.getPolyhedron());
 		  //this.ms=new HalfedgeContraction(this.mesh.polyhedron3D);
 		  //this.ms=new QuadricErrorMetrics(this.mesh.polyhedron3D);
 		  
@@ -42,16 +42,16 @@ public class MeshViewer extends PApplet {
 	
 	public void updatedMethod() {
 		if(this.simplificationMethod==0) {
-		  this.ms=new EdgeContraction(this.mesh.polyhedron3D);
+		  this.ms=new EdgeContraction(this.mesh.getPolyhedron());
 		  System.out.println("Simplification method changed: edge contraction");
 		}
 		else if(this.simplificationMethod==1) {
 			System.out.println("Simplification method changed: halfedge contraction");
-		  this.ms=new HalfedgeContraction(this.mesh.polyhedron3D);
+		  this.ms=new HalfedgeContraction(this.mesh.getPolyhedron());
 		}
 		else {
 			System.out.println("Simplification method changed: quadric error metrics");
-			this.ms=new QuadricErrorMetrics(this.mesh.polyhedron3D);
+			this.ms=new QuadricErrorMetrics(this.mesh.getPolyhedron());
 		}
 	}
 
@@ -90,9 +90,9 @@ public class MeshViewer extends PApplet {
 			//this.mesh.polyhedron3D.isValid(false);
 		}
 
-		public void calculateDistance(Vertex<Point_3> source, Vertex<Point_3> destination) {
+		public void getMinDistance(Point_3 source, Point_3 destination) {
 			continuousDijsktra.buildDistances(source);
-			double distance = continuousDijsktra.calculateDistance(destination.getPoint());
+			double distance = continuousDijsktra.getMinDistance(destination);
 
 			System.out.printf("Calculated distance is %f\n", distance);
 		}
