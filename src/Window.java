@@ -3,9 +3,9 @@ import Jcg.geometry.*;
 
 public class Window implements Comparable<Window> {
 	private double
-			begin,	/* begining of window (b0 in the article) */
+			beginning,	/* begining of window (b0 in the article) */
 			end,	/* end of window (b1 in the article) */
-			distBegin, /* distance from begin to (pseudo)source (d0 in the article) */
+			distBeginning, /* distance from beginning to (pseudo)source (d0 in the article) */
 			distEnd, /* distance from end to (pseudo)source (d1 in the article) */
 			distSource; /* distance from source to pseudosource (sigma in the article) */
 
@@ -19,33 +19,33 @@ public class Window implements Comparable<Window> {
 	private boolean side; /* (tau in the article) */
 
 	public Window(
-			double begin,
+			double beginning,
 			double end,
-			double distBegin,
+			double distBeginning,
 			double distEnd,
 			double distSource,
 			Halfedge<Point_3> halfedge,
 			boolean side
 	) {
-		this.begin = begin;
+		this.beginning = beginning;
 		this.end = end;
-		this.distBegin = distBegin;
+		this.distBeginning = distBeginning;
 		this.distEnd = distEnd;
 		this.distSource = distSource;
 		this.halfedge = halfedge;
 		this.side = side;
 	}
 	
-	public double getBegin() {
-		return this.begin;
+	public double getBeginning() {
+		return this.beginning;
 	}
 
 	public double getEnd() {
 		return this.end;
 	}
 
-	public double getDistBegin() {
-		return this.distBegin;
+	public double getDistBeginning() {
+		return this.distBeginning;
 	}
 
 	public double getDistEnd() {
@@ -68,17 +68,17 @@ public class Window implements Comparable<Window> {
 		if (baseAnglesAcute())
 			return distSource + getTriangleHeight();
 		else
-			return distSource + Math.min(distBegin, distEnd);
+			return distSource + Math.min(distBeginning, distEnd);
 	}
 
 	private boolean baseAnglesAcute() {
-		return !((end - begin) * (end - begin) + distBegin * distBegin > distSource * distSource ||
-				(end - begin) * (end - begin) + distSource * distSource > distBegin * distBegin);
+		return !((end - beginning) * (end - beginning) + distBeginning * distBeginning > distSource * distSource ||
+				(end - beginning) * (end - beginning) + distSource * distSource > distBeginning * distBeginning);
 	}
 
 	private double getTriangleHeight() {
-		double p = (end - begin + distBegin + distEnd) / 2;
-		return 2 * Math.sqrt(p * (p - (end - begin)) * (p - distBegin) * (p - distEnd)) / (end - begin);
+		double p = (end - beginning + distBeginning + distEnd) / 2;
+		return 2 * Math.sqrt(p * (p - (end - beginning)) * (p - distBeginning) * (p - distEnd)) / (end - beginning);
 	}
 
 	public int compareTo(Window other) {
