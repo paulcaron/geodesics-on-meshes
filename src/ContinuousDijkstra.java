@@ -8,7 +8,7 @@ import Jcg.geometry.*;
 import Jama.*;
 
 public class ContinuousDijkstra {
-	private final double THRESHOLD = 1e-9;
+	private static final double THRESHOLD = 1e-9;
 	private final SurfaceMesh mesh;
 	private HashMap<Halfedge, ArrayList<Window>> halfedgeToWindowsList;
 
@@ -41,9 +41,6 @@ public class ContinuousDijkstra {
 		Face<Point_3> face = getFaceContainingPoint(source);
 
 		return;
-	}
-
-	private void propagateWindow(Window window, PriorityQueue<Window> pq) {
 	}
 
 	private double getLengthHalfedge(Halfedge<Point_3> halfedge) {
@@ -149,7 +146,7 @@ public class ContinuousDijkstra {
 		return minDistance;
 	}
 
-	private Vector_3 getUnaryVector(Vector_3 vector) {
+	private static Vector_3 getUnaryVector(Vector_3 vector) {
 		Vector_3 unaryVector = vector.divisionByScalar(Math.sqrt(vector.squaredLength().doubleValue()));
 		assert zero(unaryVector.squaredLength().doubleValue() - 1);
 		return unaryVector;
@@ -159,14 +156,14 @@ public class ContinuousDijkstra {
 	 * Following convention employed by Wikipedia to name triangle sides
 	 * https://en.wikipedia.org/wiki/Stewart's_theorem
 	 */
-	private double stewart(double b, double c, double n, double m) {
+	private static double stewart(double b, double c, double n, double m) {
 		double a = n + m;
 		double d = Math.sqrt((b * b * m + c * c * n) / a - m * n);
 		assert d >= 0;
 		return d;
 	}
 
-	private boolean isVertex(Point_3 point, Face<Point_3> face) {
+	private static boolean isVertex(Point_3 point, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = face.getEdge();
 		for (int i = 0; i < 3; i++) {
 			if (zero(point.distanceFrom(halfedge.getVertex().getPoint()).doubleValue()))
@@ -179,11 +176,11 @@ public class ContinuousDijkstra {
 		return false;
 	}
 
-	private boolean isHalfedgePoint(Point_3 point, Face<Point_3> face) {
+	private static boolean isHalfedgePoint(Point_3 point, Face<Point_3> face) {
 		return zero(distancePointHalfedge(point, closestHalfedgeFromPoint(point, face)));
 	}
 
-	private Halfedge<Point_3> closestHalfedgeFromPoint(Point_3 point, Face<Point_3> face) {
+	private static Halfedge<Point_3> closestHalfedgeFromPoint(Point_3 point, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = face.getEdge();
 		for (int i = 0; i < 3; i++) {
 			if (zero(distancePointHalfedge(point, halfedge)))
@@ -196,7 +193,7 @@ public class ContinuousDijkstra {
 		return null;
 	}
 
-	private double distancePointHalfedge(Point_3 point, Halfedge<Point_3> halfedge) {
+	private static double distancePointHalfedge(Point_3 point, Halfedge<Point_3> halfedge) {
 		Point_3 a = halfedge.getVertex().getPoint();
 		Point_3 b = halfedge.getOpposite().getVertex().getPoint();
 
@@ -217,7 +214,7 @@ public class ContinuousDijkstra {
 		throw new IllegalArgumentException("Point " + point.toString() + " not contained in any face of the mesh");
 	}
 
-	private boolean insideFace(Point_3 point, Face<Point_3> face) {
+	private static boolean insideFace(Point_3 point, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = face.getEdge();
 		Point_3 a = halfedge.getVertex().getPoint();
 
@@ -277,23 +274,25 @@ public class ContinuousDijkstra {
 		return false;
 	}
 
-	private boolean zero(double x) {
+	private static boolean zero(double x) {
 		return Math.abs(x) <= THRESHOLD;
 	}
 
-	private boolean positive(double x) {
+	private static boolean positive(double x) {
 		return x > THRESHOLD;
 	}
 
-	private boolean negative(double x) {
+	private static boolean negative(double x) {
 		return x < -THRESHOLD;
 	}
 
-	
+	private void propagateWindow(Window window, PriorityQueue<Window> pq) {
+	}
+
 	public ArrayList<Double> computePoints(Window window) {
 		ArrayList<Double> arr = new ArrayList<Double>(3);
 		Point_3 p0, p1, p2, b0, b1;
-		Point_3 source = window.computeSource();
+		Point_3 source = window.getSource();
 		p0 = window.getHalfedge().getVertex().getPoint();
 		p1 = window.getHalfedge().getOpposite().getVertex().getPoint();
 		p2 = window.getHalfedge().getNext().getVertex().getPoint();

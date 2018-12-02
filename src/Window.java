@@ -65,19 +65,20 @@ public class Window implements Comparable<Window> {
 	}
 
 	public double minimumDistance() {
-		if (isAcuteTriangle())
-			return distSource + height();
+		if (baseAnglesAcute())
+			return distSource + getTriangleHeight();
 		else
 			return distSource + Math.min(distBegin, distEnd);
 	}
 
-	private boolean isAcuteTriangle() {
-		return !((end-begin)*(end-begin) + distBegin*distBegin > distSource*distSource || (end-begin)*(end-begin) + distSource*distSource > distBegin*distBegin);
+	private boolean baseAnglesAcute() {
+		return !((end - begin) * (end - begin) + distBegin * distBegin > distSource * distSource ||
+				(end - begin) * (end - begin) + distSource * distSource > distBegin * distBegin);
 	}
 
-	private double height() {
-		double p = (end-begin + distBegin + distEnd) / 2;
-		return 2*Math.sqrt(p*(p-(end-begin))*(p-distBegin)*(p-distEnd))/(end-begin);
+	private double getTriangleHeight() {
+		double p = (end - begin + distBegin + distEnd) / 2;
+		return 2 * Math.sqrt(p * (p - (end - begin)) * (p - distBegin) * (p - distEnd)) / (end - begin);
 	}
 
 	public int compareTo(Window other) {
@@ -91,7 +92,7 @@ public class Window implements Comparable<Window> {
 			return 0;
 	}
 	
-	public Point_3 computeSource() {
+	public Point_3 getSource() {
 		return new Point_3(); // to complete
 	}
 }
