@@ -71,12 +71,20 @@ public class ContinuousDijkstra {
 
 	/* The destination point is a vertex of face */
 	private double getMinDistanceFromVertex(Point_3 destination, Face<Point_3> face) {
-		return 0;
+		Halfedge<Point_3> halfedge = face.getEdge();
+		for (int i = 0; i < 3; i++) {
+			if (zero(destination.distanceFrom(halfedge.getVertex().getPoint()).doubleValue()))
+				return getMinDistance(destination, halfedge);
+
+			halfedge = halfedge.getNext();
+		}
+		throw new AssertionError();
 	}
 
 	/* The destination point lies on an edge of face */
 	private double getMinDistanceFromHalfedge(Point_3 destination, Face<Point_3> face) {
-		return 0;
+		Halfedge<Point_3> halfedge = closestHalfedgeFromPoint(destination, face);
+		return getMinDistance(destination, halfedge);
 	}
 
 	/* The destination point lies in the interior of face */
@@ -172,16 +180,20 @@ public class ContinuousDijkstra {
 	}
 
 	private boolean isHalfedgePoint(Point_3 point, Face<Point_3> face) {
+		return zero(distancePointHalfedge(point, closestHalfedgeFromPoint(point, face)));
+	}
+
+	private Halfedge<Point_3> closestHalfedgeFromPoint(Point_3 point, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = face.getEdge();
 		for (int i = 0; i < 3; i++) {
 			if (zero(distancePointHalfedge(point, halfedge)))
-				return true;
+				return halfedge;
 
 			halfedge = halfedge.getNext();
 		}
 		assert halfedge == halfedge.getNext();
 
-		return false;
+		return null;
 	}
 
 	private double distancePointHalfedge(Point_3 point, Halfedge<Point_3> halfedge) {
