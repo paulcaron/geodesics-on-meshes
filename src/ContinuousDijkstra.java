@@ -8,7 +8,6 @@ import Jcg.geometry.*;
 import Jama.*;
 
 public class ContinuousDijkstra {
-	private static final double THRESHOLD = 1e-9;
 	private final SurfaceMesh mesh;
 	private HashMap<Halfedge, ArrayList<Window>> halfedgeToWindowsList;
 
@@ -43,23 +42,15 @@ public class ContinuousDijkstra {
 		return;
 	}
 
-	private double getLengthHalfedge(Halfedge<Point_3> halfedge) {
-		assert halfedge != null;
-		Vertex<Point_3> destination = halfedge.getVertex();
-		Vertex<Point_3> origin = halfedge.getOpposite().getVertex();
-
-		return (double) destination.getPoint().distanceFrom(origin.getPoint());
-	}
-
 	public double getMinDistance(Point_3 destination) {
 		if (destination == null)
 			throw new NullPointerException("Destination point is null");
 
 		Face<Point_3> faceContainingPoint = getFaceContainingPoint(destination);
 
-		if (isVertex(destination, faceContainingPoint)) {
+		if (GeoUtils.isFaceVertex(destination, faceContainingPoint)) {
 			return getMinDistanceFromVertex(destination, faceContainingPoint);
-		} else if (isHalfedgePoint(destination, faceContainingPoint)) {
+		} else if (GeoUtils.isHalfedgePoint(destination, faceContainingPoint)) {
 			return getMinDistanceFromHalfedge(destination, faceContainingPoint);
 		} else {
 			return getMinDistanceFromFace(destination, faceContainingPoint);
@@ -70,7 +61,7 @@ public class ContinuousDijkstra {
 	private double getMinDistanceFromVertex(Point_3 destination, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = face.getEdge();
 		for (int i = 0; i < 3; i++) {
-			if (zero(destination.distanceFrom(halfedge.getVertex().getPoint()).doubleValue()))
+			if (GeoUtils.zero(destination.distanceFrom(halfedge.getVertex().getPoint()).doubleValue()))
 				return getMinDistance(destination, halfedge);
 
 			halfedge = halfedge.getNext();
@@ -80,7 +71,7 @@ public class ContinuousDijkstra {
 
 	/* The destination point lies on an edge of face */
 	private double getMinDistanceFromHalfedge(Point_3 destination, Face<Point_3> face) {
-		Halfedge<Point_3> halfedge = closestHalfedgeFromPoint(destination, face);
+		Halfedge<Point_3> halfedge = GeoUtils.closestHalfedgeFromPoint(destination, face);
 		return getMinDistance(destination, halfedge);
 	}
 
@@ -99,7 +90,7 @@ public class ContinuousDijkstra {
 		}
 		assert halfedge == face.getEdge();
 
-		assert positive(minDistance);
+		assert GeoUtils.positive(minDistance);
 
 		return minDistance;
 	}
@@ -116,7 +107,7 @@ public class ContinuousDijkstra {
 				minDistance = minDistanceForWindow;
 		}
 
-		assert positive(minDistance);
+		assert GeoUtils.positive(minDistance);
 
 		return minDistance;
 	}
@@ -125,180 +116,212 @@ public class ContinuousDijkstra {
 		double minDistance = Double.MAX_VALUE;
 
 		Halfedge<Point_3> halfedge = window.getHalfedge();
-		double lengthHalfedge = getLengthHalfedge(halfedge);
+		double lengthHalfedge = GeoUtils.lengthHalfedge(halfedge);
 		Point_3 halfedgeOrigin = halfedge.getOpposite().getVertex().getPoint();
-		Point_3 halfedgeEnd = halfedge.getVertex().getPoint();
-		Vector_3 halfedgeUnaryVector = getUnaryVector(new Vector_3(halfedgeOrigin, halfedgeEnd));
 
 		double dx = lengthHalfedge / 100;
-		for (double x = window.getBegin(); x <= window.getEnd(); x += dx) {
-			Point_3 halfedgePoint = new Point_3(halfedgeOrigin);
-			halfedgePoint.translateOf(halfedgeUnaryVector.multiplyByScalar(x));
+		for (double x = window.getBeginning(); x <= window.getEnd(); x += dx) {
+			Point_3 halfedgePoint = GeoUtils.halfedgeMidpoint(halfedge, x);
 
-			double distance = (double) destination.distanceFrom(halfedgePoint) + window.getDistSource() +
-				stewart(window.getDistBegin(), window.getDistEnd(), x - window.getBegin(), window.getEnd() - x);
+			double distance = destination.distanceFrom(halfedgePoint).doubleValue() + window.getDistSource() +
+				GeoUtils.stewart(window.getDistBeginning(), window.getDistEnd(), x - window.getBeginning(), window.getEnd() - x);
 
 			if (distance < minDistance)
 				minDistance = distance;
 		}
-		assert positive(minDistance);
+		assert GeoUtils.positive(minDistance);
 
 		return minDistance;
 	}
 
-	private static Vector_3 getUnaryVector(Vector_3 vector) {
-		Vector_3 unaryVector = vector.divisionByScalar(Math.sqrt(vector.squaredLength().doubleValue()));
-		assert zero(unaryVector.squaredLength().doubleValue() - 1);
-		return unaryVector;
-	}
-
-	/*
-	 * Following convention employed by Wikipedia to name triangle sides
-	 * https://en.wikipedia.org/wiki/Stewart's_theorem
-	 */
-	private static double stewart(double b, double c, double n, double m) {
-		double a = n + m;
-		double d = Math.sqrt((b * b * m + c * c * n) / a - m * n);
-		assert d >= 0;
-		return d;
-	}
-
-	private static boolean isVertex(Point_3 point, Face<Point_3> face) {
-		Halfedge<Point_3> halfedge = face.getEdge();
-		for (int i = 0; i < 3; i++) {
-			if (zero(point.distanceFrom(halfedge.getVertex().getPoint()).doubleValue()))
-				return true;
-
-			halfedge = halfedge.getNext();
-		}
-		assert halfedge == face.getEdge();
-
-		return false;
-	}
-
-	private static boolean isHalfedgePoint(Point_3 point, Face<Point_3> face) {
-		return zero(distancePointHalfedge(point, closestHalfedgeFromPoint(point, face)));
-	}
-
-	private static Halfedge<Point_3> closestHalfedgeFromPoint(Point_3 point, Face<Point_3> face) {
-		Halfedge<Point_3> halfedge = face.getEdge();
-		for (int i = 0; i < 3; i++) {
-			if (zero(distancePointHalfedge(point, halfedge)))
-				return halfedge;
-
-			halfedge = halfedge.getNext();
-		}
-		assert halfedge == halfedge.getNext();
-
-		return null;
-	}
-
-	private static double distancePointHalfedge(Point_3 point, Halfedge<Point_3> halfedge) {
-		Point_3 a = halfedge.getVertex().getPoint();
-		Point_3 b = halfedge.getOpposite().getVertex().getPoint();
-
-		Vector_3 ab = new Vector_3(a, b);
-		Vector_3 ap = new Vector_3(a, point);
-
-		Vector_3 crossProduct = ab.crossProduct(ap);
-
-		return Math.sqrt(crossProduct.squaredLength().doubleValue() / ab.squaredLength().doubleValue());
-	}
-
 	private Face<Point_3> getFaceContainingPoint(Point_3 point) {
 		for (Face<Point_3> polyhedronFace : mesh.getFaces()) {
-			if (insideFace(point, polyhedronFace))
+			if (GeoUtils.insideFace(point, polyhedronFace))
 				return polyhedronFace;
 		}
 
 		throw new IllegalArgumentException("Point " + point.toString() + " not contained in any face of the mesh");
 	}
 
-	private static boolean insideFace(Point_3 point, Face<Point_3> face) {
-		Halfedge<Point_3> halfedge = face.getEdge();
-		Point_3 a = halfedge.getVertex().getPoint();
+	private void propagateWindow(Window window, PriorityQueue<Window> pq) {
+		ArrayList<Double> propagatedExtremities = getPropagatedExtremities(window);
+		Halfedge<Point_3> propagatingHalfedge = window.getHalfedge();
+		assert propagatedExtremities.size() == 3;
+		double firstExtremity = propagatedExtremities.get(0);
+		double secondExtremity = propagatedExtremities.get(1);
+		double thirdExtremity = propagatedExtremities.get(2);
 
-		halfedge = halfedge.getNext();
-		Point_3 b = halfedge.getVertex().getPoint();
+		if (GeoUtils.negative(firstExtremity)) {
+			/* The window propagates to only one window */
 
-		halfedge = halfedge.getNext();
-		Point_3 c = halfedge.getVertex().getPoint();
+			Halfedge<Point_3> halfedge = propagatingHalfedge.getNext().getNext();
 
-		Vector_3 ab = new Vector_3(a, b);
-		Vector_3 ac = new Vector_3(a, c);
-		Vector_3 ap = new Vector_3(a, point);
+			assert GeoUtils.positive(secondExtremity);
+			assert secondExtremity < thirdExtremity;
+			assert thirdExtremity <= GeoUtils.lengthHalfedge(halfedge);
 
-		Matrix matrix = new Matrix(new double[][] {
-			{ab.getX().doubleValue(), ab.getY().doubleValue(), ab.getZ().doubleValue()},
-			{ac.getX().doubleValue(), ac.getY().doubleValue(), ac.getZ().doubleValue()},
-			{ap.getX().doubleValue(), ap.getY().doubleValue(), ap.getZ().doubleValue()}});
+			Window propagatedWindow = new Window(
+					secondExtremity,
+					thirdExtremity,
+					GeoUtils.halfedgeMidpoint(propagatingHalfedge, window.getEnd()).distanceFrom(
+						GeoUtils.halfedgeMidpoint(halfedge, secondExtremity)).doubleValue() + window.getDistEnd(),
+					GeoUtils.halfedgeMidpoint(propagatingHalfedge, window.getBeginning()).distanceFrom(
+						GeoUtils.halfedgeMidpoint(halfedge, thirdExtremity)).doubleValue() + window.getDistBeginning(),
+					window.getDistSource(),
+					halfedge,
+					true);
+			mergeWindow(propagatedWindow, pq);
 
-		/* Point point is not in the plane containing face */
-		if (!zero(matrix.det()))
-			return false;
+			/*
+			 * If the window is adjacent to a saddle/boundary vertex
+			 * we must propagate through its adjacent edge
+			 */
+			if (GeoUtils.equals(window.getEnd(), GeoUtils.lengthHalfedge(propagatingHalfedge)) &&
+				specialVertex(propagatingHalfedge.getVertex())) {
+				halfedge = propagatingHalfedge.getNext();
+				Window firstExtraWindow = new Window(
+						0,
+						GeoUtils.lengthHalfedge(halfedge),
+						0, /* the new pseudosource is the saddle/boundary vertex itself */
+						GeoUtils.lengthHalfedge(halfedge),
+						window.getDistEnd() + window.getDistSource(),
+						halfedge,
+						true);
+				mergeWindow(firstExtraWindow, pq);
 
-		/*
-		 * Tries to solve the system alpha * ab + beta * ac = ap
-		 * with 0 <= alpha, beta <= 1 and alpha + beta <= 1
-		 */
-		matrix = new Matrix(new double[][] {
-			{ab.getX().doubleValue(), ac.getX().doubleValue()},
-			{ab.getY().doubleValue(), ac.getY().doubleValue()}});
-		if (!zero(matrix.det())) {
-			Matrix coeffs = matrix.solve(new Matrix (new double[][] {{ap.getX().doubleValue()}, {ap.getY().doubleValue()}}));
-			double alpha = coeffs.get(0, 0),
-				   beta = coeffs.get(1, 0);
-			return positive(alpha) && positive(beta) && negative(alpha + beta - 1);
+				halfedge = halfedge.getNext();
+				Window secondExtraWindow = new Window(
+						0,
+						secondExtremity,
+						GeoUtils.lengthHalfedge(propagatingHalfedge.getNext()),
+						GeoUtils.halfedgeMidpoint(halfedge, secondExtremity).distanceFrom(
+							GeoUtils.halfedgeEnd(propagatingHalfedge)).doubleValue(),
+						window.getDistEnd() + window.getDistSource(),
+						halfedge,
+						true);
+				mergeWindow(secondExtraWindow, pq);
+			}
+
+			assert GeoUtils.positive(window.getBeginning()) ||
+				!specialVertex(propagatingHalfedge.getOpposite().getVertex());
+		} else if (GeoUtils.negative(thirdExtremity)) {
+			/* The window propagates to only one window */
+
+			Halfedge<Point_3> halfedge = propagatingHalfedge.getNext();
+
+			assert GeoUtils.positive(firstExtremity); 
+			assert firstExtremity < secondExtremity;
+			assert secondExtremity <= GeoUtils.lengthHalfedge(halfedge);
+
+			Window propagatedWindow = new Window(
+					firstExtremity,
+					secondExtremity,
+					GeoUtils.halfedgeMidpoint(propagatingHalfedge, window.getEnd()).distanceFrom(
+						GeoUtils.halfedgeMidpoint(halfedge, firstExtremity)).doubleValue() + window.getDistEnd(),
+					GeoUtils.halfedgeMidpoint(propagatingHalfedge, window.getBeginning()).distanceFrom(
+						GeoUtils.halfedgeMidpoint(halfedge, secondExtremity)).doubleValue() + window.getDistBeginning(),
+					window.getDistSource(),
+					halfedge,
+					true);
+			mergeWindow(propagatedWindow, pq);
+
+			/*
+			 * If the window is adjacent to a saddle/boundary vertex
+			 * we must propagate through its adjacent edge
+			 */
+			if (GeoUtils.zero(window.getBeginning()) ||
+				specialVertex(propagatingHalfedge.getOpposite().getVertex())) {
+				halfedge = propagatingHalfedge.getNext().getNext();
+				Window firstExtraWindow = new Window(
+						0,
+						GeoUtils.lengthHalfedge(halfedge),
+						GeoUtils.lengthHalfedge(halfedge), /* the new pseudosource is the saddle/boundary vertex itself */
+						0,
+						window.getDistBeginning() + window.getDistSource(),
+						halfedge,
+						true);
+				mergeWindow(firstExtraWindow, pq);
+
+				halfedge = propagatingHalfedge.getNext();
+				Window secondExtraWindow = new Window(
+						GeoUtils.lengthHalfedge(halfedge) - secondExtremity,
+						GeoUtils.lengthHalfedge(halfedge),
+						GeoUtils.halfedgeMidpoint(halfedge, secondExtremity).distanceFrom(
+							GeoUtils.halfedgeOrigin(propagatingHalfedge)).doubleValue(),
+						GeoUtils.lengthHalfedge(halfedge.getNext()),
+						window.getDistBeginning() + window.getDistSource(),
+						halfedge,
+						true);
+				mergeWindow(secondExtraWindow, pq);
+			}
+
+			assert GeoUtils.negative(window.getEnd() - GeoUtils.lengthHalfedge(propagatingHalfedge)) ||
+				!specialVertex(propagatingHalfedge.getVertex());
+		} else {
+			/* 
+			 * The window propagates to two windows,
+			 * each in a different edge
+			 */
+			assert GeoUtils.negative(secondExtremity);
+
+			Halfedge<Point_3> firstHalfedge = propagatingHalfedge.getNext();
+
+			assert GeoUtils.positive(firstExtremity); 
+			assert firstExtremity < GeoUtils.lengthHalfedge(firstHalfedge);
+
+			Window firstPropagatedWindow = new Window(
+					firstExtremity,
+					GeoUtils.lengthHalfedge(firstHalfedge),
+					GeoUtils.halfedgeMidpoint(firstHalfedge, firstExtremity).distanceFrom(
+						GeoUtils.halfedgeMidpoint(propagatingHalfedge, window.getEnd())).doubleValue() + window.getDistEnd(),
+					getMinDistance(GeoUtils.halfedgeEnd(firstHalfedge), window), // is it really correct?
+					window.getDistSource(),
+					firstHalfedge,
+					true);
+			mergeWindow(firstPropagatedWindow, pq);
+
+			Halfedge<Point_3> secondHalfedge = propagatingHalfedge.getNext().getNext();
+
+			assert GeoUtils.positive(thirdExtremity); 
+			assert thirdExtremity < GeoUtils.lengthHalfedge(secondHalfedge);
+
+			Window secondPropagatedWindow = new Window(
+					thirdExtremity,
+					GeoUtils.lengthHalfedge(secondHalfedge),
+					getMinDistance(GeoUtils.halfedgeOrigin(secondHalfedge), window), // is it really correct?
+					GeoUtils.halfedgeMidpoint(propagatingHalfedge, window.getBeginning()).distanceFrom(
+						GeoUtils.halfedgeMidpoint(secondHalfedge, thirdExtremity)).doubleValue() + window.getDistBeginning(),
+					window.getDistSource(),
+					secondHalfedge,
+					true);
+			mergeWindow(secondPropagatedWindow, pq);
+
+			assert !specialVertex(propagatingHalfedge.getVertex()) ||
+				GeoUtils.negative(window.getEnd() - GeoUtils.lengthHalfedge(propagatingHalfedge));
+
+			assert !specialVertex(propagatingHalfedge.getOpposite().getVertex()) ||
+				GeoUtils.positive(window.getBeginning());
 		}
+	}
 
-		matrix = new Matrix(new double[][] {
-			{ab.getX().doubleValue(), ac.getX().doubleValue()},
-			{ab.getZ().doubleValue(), ac.getZ().doubleValue()}});
-		if (!zero(matrix.det())) {
-			Matrix coeffs = matrix.solve(new Matrix (new double[][] {{ap.getX().doubleValue()}, {ap.getZ().doubleValue()}}));
-			double alpha = coeffs.get(0, 0),
-				   beta = coeffs.get(1, 0);
-			return positive(alpha) && positive(beta) && negative(alpha + beta - 1);
-		}
+	private void mergeWindow(Window window, PriorityQueue<Window> pq) {
+		return;
+	}
 
-		matrix = new Matrix(new double[][] {
-			{ab.getZ().doubleValue(), ac.getZ().doubleValue()},
-			{ab.getY().doubleValue(), ac.getY().doubleValue()}});
-		if (!zero(matrix.det())) {
-			Matrix coeffs = matrix.solve(new Matrix (new double[][] {{ap.getZ().doubleValue()}, {ap.getY().doubleValue()}}));
-			double alpha = coeffs.get(0, 0),
-				   beta = coeffs.get(1, 0);
-			return positive(alpha) && positive(beta) && negative(alpha + beta - 1);
-		}
-
+	private boolean specialVertex(Vertex<Point_3> vertex) {
 		return false;
 	}
 
-	private static boolean zero(double x) {
-		return Math.abs(x) <= THRESHOLD;
-	}
-
-	private static boolean positive(double x) {
-		return x > THRESHOLD;
-	}
-
-	private static boolean negative(double x) {
-		return x < -THRESHOLD;
-	}
-
-	private void propagateWindow(Window window, PriorityQueue<Window> pq) {
-	}
-
-	public ArrayList<Double> computePoints(Window window) {
+	public ArrayList<Double> getPropagatedExtremities(Window window) {
 		ArrayList<Double> arr = new ArrayList<Double>(3);
 		Point_3 p0, p1, p2, b0, b1;
 		Point_3 source = window.getSource();
 		p0 = window.getHalfedge().getVertex().getPoint();
 		p1 = window.getHalfedge().getOpposite().getVertex().getPoint();
 		p2 = window.getHalfedge().getNext().getVertex().getPoint();
-		double lengthHalfedge = getLengthHalfedge(window.getHalfedge());
+		double lengthHalfedge = GeoUtils.lengthHalfedge(window.getHalfedge());
 		boolean p20, p21; //p20=true if p2 is on the left side of the window : 
-		Number[] coefficients0 = {1-window.getBegin() / lengthHalfedge, window.getBegin() / lengthHalfedge };
+		Number[] coefficients0 = {1-window.getBeginning() / lengthHalfedge, window.getBeginning() / lengthHalfedge };
 		Number[] coefficients1 = {1-window.getEnd()/ lengthHalfedge, window.getEnd()/ lengthHalfedge};
 		Point_3[] points = {p0, p1};
 		b0 = Point_3.linearCombination(points, coefficients0);
