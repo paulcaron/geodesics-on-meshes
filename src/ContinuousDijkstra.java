@@ -37,32 +37,32 @@ public class ContinuousDijkstra {
 			Point_3 source,
 			PriorityQueue<Window> pq
 	) {
-		Face<Point_3> face = getFaceContainingPoint(source);
+		Face<Point_3> face = faceContainingPoint(source);
 
 		return;
 	}
 
-	public double getMinDistance(Point_3 destination) {
+	public double minDistance(Point_3 destination) {
 		if (destination == null)
 			throw new NullPointerException("Destination point is null");
 
-		Face<Point_3> faceContainingPoint = getFaceContainingPoint(destination);
+		Face<Point_3> faceContainingPoint = faceContainingPoint(destination);
 
-		if (GeoUtils.isFaceVertex(destination, faceContainingPoint)) {
-			return getMinDistanceFromVertex(destination, faceContainingPoint);
-		} else if (GeoUtils.isHalfedgePoint(destination, faceContainingPoint)) {
-			return getMinDistanceFromHalfedge(destination, faceContainingPoint);
+		if (GeoUtils.faceVertex(destination, faceContainingPoint)) {
+			return minDistanceFromVertex(destination, faceContainingPoint);
+		} else if (GeoUtils.halfedgePoint(destination, faceContainingPoint)) {
+			return minDistanceFromHalfedge(destination, faceContainingPoint);
 		} else {
-			return getMinDistanceFromFace(destination, faceContainingPoint);
+			return minDistanceFromFace(destination, faceContainingPoint);
 		}
 	}
 
 	/* The destination point is a vertex of face */
-	private double getMinDistanceFromVertex(Point_3 destination, Face<Point_3> face) {
+	private double minDistanceFromVertex(Point_3 destination, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = face.getEdge();
 		for (int i = 0; i < 3; i++) {
 			if (GeoUtils.zero(destination.distanceFrom(halfedge.getVertex().getPoint()).doubleValue()))
-				return getMinDistance(destination, halfedge);
+				return minDistance(destination, halfedge);
 
 			halfedge = halfedge.getNext();
 		}
@@ -70,18 +70,18 @@ public class ContinuousDijkstra {
 	}
 
 	/* The destination point lies on an edge of face */
-	private double getMinDistanceFromHalfedge(Point_3 destination, Face<Point_3> face) {
+	private double minDistanceFromHalfedge(Point_3 destination, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = GeoUtils.closestHalfedgeFromPoint(destination, face);
-		return getMinDistance(destination, halfedge);
+		return minDistance(destination, halfedge);
 	}
 
 	/* The destination point lies in the interior of face */
-	private double getMinDistanceFromFace(Point_3 destination, Face<Point_3> face) {
+	private double minDistanceFromFace(Point_3 destination, Face<Point_3> face) {
 		double minDistance = Double.MAX_VALUE;
 
 		Halfedge<Point_3> halfedge = face.getEdge();
 		for (int i = 0; i < 3; i++) {
-			double minDistanceThroughHalfedge = getMinDistance(destination, halfedge);
+			double minDistanceThroughHalfedge = minDistance(destination, halfedge);
 
 			if (minDistanceThroughHalfedge < minDistance)
 				minDistance = minDistanceThroughHalfedge;
@@ -95,13 +95,13 @@ public class ContinuousDijkstra {
 		return minDistance;
 	}
 
-	private double getMinDistance(Point_3 destination, Halfedge<Point_3> halfedge) {
+	private double minDistance(Point_3 destination, Halfedge<Point_3> halfedge) {
 		double minDistance = Double.MAX_VALUE;
 		ArrayList<Window> windowsList = halfedgeToWindowsList.get(halfedge);
 		assert windowsList.size() > 0;
 
 		for (int i = 0; i < windowsList.size(); i++) {
-			double minDistanceForWindow = getMinDistance(destination, windowsList.get(i));
+			double minDistanceForWindow = minDistance(destination, windowsList.get(i));
 
 			if (minDistanceForWindow < minDistance)
 				minDistance = minDistanceForWindow;
@@ -112,7 +112,7 @@ public class ContinuousDijkstra {
 		return minDistance;
 	}
 
-	private double getMinDistance(Point_3 destination, Window window) {
+	private double minDistance(Point_3 destination, Window window) {
 		double minDistance = Double.MAX_VALUE;
 
 		Halfedge<Point_3> halfedge = window.getHalfedge();
@@ -134,7 +134,7 @@ public class ContinuousDijkstra {
 		return minDistance;
 	}
 
-	private Face<Point_3> getFaceContainingPoint(Point_3 point) {
+	private Face<Point_3> faceContainingPoint(Point_3 point) {
 		for (Face<Point_3> polyhedronFace : mesh.getFaces()) {
 			if (GeoUtils.insideFace(point, polyhedronFace))
 				return polyhedronFace;
@@ -144,7 +144,7 @@ public class ContinuousDijkstra {
 	}
 
 	private void propagateWindow(Window window, PriorityQueue<Window> pq) {
-		ArrayList<Double> propagatedExtremities = getPropagatedExtremities(window);
+		ArrayList<Double> propagatedExtremities = propagatedExtremities(window);
 		Halfedge<Point_3> propagatingHalfedge = window.getHalfedge();
 		assert propagatedExtremities.size() == 3;
 		double firstExtremity = propagatedExtremities.get(0);
@@ -274,7 +274,7 @@ public class ContinuousDijkstra {
 					GeoUtils.lengthHalfedge(firstHalfedge),
 					GeoUtils.halfedgeMidpoint(firstHalfedge, firstExtremity).distanceFrom(
 						GeoUtils.halfedgeMidpoint(propagatingHalfedge, window.getEnd())).doubleValue() + window.getDistEnd(),
-					getMinDistance(GeoUtils.halfedgeEnd(firstHalfedge), window), // is it really correct?
+					minDistance(GeoUtils.halfedgeEnd(firstHalfedge), window), // is it really correct?
 					window.getDistSource(),
 					firstHalfedge,
 					true);
@@ -288,7 +288,7 @@ public class ContinuousDijkstra {
 			Window secondPropagatedWindow = new Window(
 					thirdExtremity,
 					GeoUtils.lengthHalfedge(secondHalfedge),
-					getMinDistance(GeoUtils.halfedgeOrigin(secondHalfedge), window), // is it really correct?
+					minDistance(GeoUtils.halfedgeOrigin(secondHalfedge), window), // is it really correct?
 					GeoUtils.halfedgeMidpoint(propagatingHalfedge, window.getBeginning()).distanceFrom(
 						GeoUtils.halfedgeMidpoint(secondHalfedge, thirdExtremity)).doubleValue() + window.getDistBeginning(),
 					window.getDistSource(),
@@ -312,7 +312,7 @@ public class ContinuousDijkstra {
 		return false;
 	}
 
-	public ArrayList<Double> getPropagatedExtremities(Window window) {
+	public ArrayList<Double> propagatedExtremities(Window window) {
 		ArrayList<Double> arr = new ArrayList<Double>(3);
 		Point_3 p0, p1, p2, b0, b1;
 		Point_3 source = window.getSource();
