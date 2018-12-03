@@ -90,9 +90,9 @@ public class MeshViewer extends PApplet {
 			//this.mesh.polyhedron3D.isValid(false);
 		}
 
-		public void minDistance(Point_3 source, Point_3 destination) {
+		public void getDistanceToSource(Point_3 source, Point_3 destination) {
 			continuousDijsktra.buildDistances(source);
-			double distance = continuousDijsktra.minDistance(destination);
+			double distance = continuousDijsktra.getDistanceToSource(destination);
 
 			System.out.printf("Calculated distance is %f\n", distance);
 		}

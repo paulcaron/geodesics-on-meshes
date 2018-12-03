@@ -65,13 +65,13 @@ public class Window implements Comparable<Window> {
 	}
 
 	public double minimumDistance() {
-		if (baseAnglesAcute())
-			return distSource + GeoUtils.triangleHeight(end - beginning, distBeginning, distEnd);
+		if (areBaseAnglesAcute())
+			return distSource + GeoUtils.getTriangleHeight(end - beginning, distBeginning, distEnd);
 		else
 			return distSource + Math.min(distBeginning, distEnd);
 	}
 
-	private boolean baseAnglesAcute() {
+	private boolean areBaseAnglesAcute() {
 		return !((end - beginning) * (end - beginning) + distBeginning * distBeginning > distSource * distSource ||
 				(end - beginning) * (end - beginning) + distSource * distSource > distBeginning * distBeginning);
 	}
