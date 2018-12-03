@@ -35,6 +35,16 @@ public class Window implements Comparable<Window> {
 		this.halfedge = halfedge;
 		this.side = side;
 	}
+
+	public Window(Window other) {
+		this(other.beginning,
+			other.end,
+			other.distBeginning,
+			other.distEnd,
+			other.distSource,
+			other.halfedge,
+			other.side);
+	}
 	
 	public double getBeginning() {
 		return this.beginning;
@@ -89,5 +99,29 @@ public class Window implements Comparable<Window> {
 	
 	public Point_3 getSource() {
 		return new Point_3(); // to complete
+	}
+
+	public setBeginning(double newBeginning) {
+		if (newBeginning >= end)
+			throw IllegalArgumentException("New beginning value should be smaller than end");
+		else if (newBeginning < 0)
+			throw IllegalArgumentException("New beginning value should be non-negative");
+
+		this.distBeginning = GeoUtils.getCevianLength(distSource, distEnd, newBeginning - beginning, end - newBeginning);
+		this.beginning = newBeginning;
+
+		assert this.distBeginning > 0;
+	}
+
+	public setEnd(double newEnd) {
+		if (newEnd <= beginning)
+			throw IllegalArgumentException("New end value should be greater than beginning");
+		else if (newEnd > GeoUtils.getHalfedgeLength(this.halfedge))
+			throw IllegalArgumentException("New end value should be non-negative");
+
+		this.distEnd = GeoUtils.getCevianLength(distSource, distEnd, newEnd - beginning, end - newEnd);
+		this.end = newEnd;
+
+		assert this.distEnd > 0;
 	}
 }
