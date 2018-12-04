@@ -2,34 +2,34 @@ import Jcg.polyhedron.*;
 import Jcg.geometry.*;
 
 public class Window implements Comparable<Window> {
-	private double
-			beginning,	/* begining of window (b0 in the article) */
+	private final double
+			start,	/* begining of window (b0 in the article) */
 			end,	/* end of window (b1 in the article) */
-			distBeginning, /* distance from beginning to (pseudo)source (d0 in the article) */
+			distStart, /* distance from start to (pseudo)source (d0 in the article) */
 			distEnd, /* distance from end to (pseudo)source (d1 in the article) */
 			distSource; /* distance from source to pseudosource (sigma in the article) */
 
-	private Halfedge<Point_3> halfedge; /* halfedge corresponding to window */
+	private final Halfedge<Point_3> halfedge; /* halfedge corresponding to window */
 
  	/*
  	 * Is the path from this window towards
  	 * the (pseudo)source passing through the
  	 * face containing this halfedge?
  	 */
-	private boolean side; /* (tau in the article) */
+	private final boolean side; /* (tau in the article) */
 
 	public Window(
-			double beginning,
+			double start,
 			double end,
-			double distBeginning,
+			double distStart,
 			double distEnd,
 			double distSource,
 			Halfedge<Point_3> halfedge,
 			boolean side
 	) {
-		this.beginning = beginning;
+		this.start = start;
 		this.end = end;
-		this.distBeginning = distBeginning;
+		this.distStart = distStart;
 		this.distEnd = distEnd;
 		this.distSource = distSource;
 		this.halfedge = halfedge;
@@ -37,25 +37,25 @@ public class Window implements Comparable<Window> {
 	}
 
 	public Window(Window other) {
-		this(other.beginning,
+		this(other.start,
 			other.end,
-			other.distBeginning,
+			other.distStart,
 			other.distEnd,
 			other.distSource,
 			other.halfedge,
 			other.side);
 	}
 	
-	public double getBeginning() {
-		return this.beginning;
+	public double getStart() {
+		return this.start;
 	}
 
 	public double getEnd() {
 		return this.end;
 	}
 
-	public double getDistBeginning() {
-		return this.distBeginning;
+	public double getDistStart() {
+		return this.distStart;
 	}
 
 	public double getDistEnd() {
@@ -69,26 +69,45 @@ public class Window implements Comparable<Window> {
 	public boolean getSide() {
 		return this.side;
 	}
+
+	public double getLength() {
+		return end - start;
+	}
 	
 	public Halfedge<Point_3> getHalfedge() {
 		return this.halfedge;
 	}
 
-	public double minimumDistance() {
+	public double getMinimumDistanceFromEndpointToSource() {
 		if (areBaseAnglesAcute())
-			return distSource + GeoUtils.getTriangleHeight(end - beginning, distBeginning, distEnd);
+			return distSource + GeoUtils.getTriangleHeight(end - start, distStart, distEnd);
 		else
-			return distSource + Math.min(distBeginning, distEnd);
+			return distSource + Math.min(distStart, distEnd);
+	}
+
+	/* 
+	 * Calculates and returns the abscissa of the source point
+	 * considering a cartesian plan having origin at start,
+	 * and x-axis passing through the start and end points of
+	 * the window. The result might be negative.
+	 */
+	public double getSourceProjection() {
+		double height = GeoUtils.getTriangleHeight(end - start, distStart, distEnd);	
+		double projDistance = Math.sqrt(distStart * distStart - height * height);
+
+		if (distEnd * distEnd > (end - start) * (end - start) + distStart * distStart)
+			return -projDistance;
+		return projDistance;
 	}
 
 	private boolean areBaseAnglesAcute() {
-		return !((end - beginning) * (end - beginning) + distBeginning * distBeginning > distSource * distSource ||
-				(end - beginning) * (end - beginning) + distSource * distSource > distBeginning * distBeginning);
+		return !((end - start) * (end - start) + distStart * distStart > distSource * distSource ||
+				(end - start) * (end - start) + distSource * distSource > distStart * distStart);
 	}
 
 	public int compareTo(Window other) {
-		double thisDist = this.minimumDistance(),
-			   otherDist = other.minimumDistance();
+		double thisDist = this.getMinimumDistanceFromEndpointToSource(),
+			   otherDist = other.getMinimumDistanceFromEndpointToSource();
 		if (thisDist < otherDist)
 			return -1;
 		else if (thisDist > otherDist)
@@ -98,30 +117,26 @@ public class Window implements Comparable<Window> {
 	}
 	
 	public Point_3 getSource() {
-		return new Point_3(); // to complete
+		throw new IllegalArgumentException("Not implemented");
 	}
 
-	public setBeginning(double newBeginning) {
-		if (newBeginning >= end)
-			throw IllegalArgumentException("New beginning value should be smaller than end");
-		else if (newBeginning < 0)
-			throw IllegalArgumentException("New beginning value should be non-negative");
+	public Window setStart(double newStart) {
+		if (newStart >= end)
+			throw new IllegalArgumentException("New start value should be smaller than end");
+		else if (newStart < 0)
+			throw new IllegalArgumentException("New start value should be non-negative");
 
-		this.distBeginning = GeoUtils.getCevianLength(distSource, distEnd, newBeginning - beginning, end - newBeginning);
-		this.beginning = newBeginning;
-
-		assert this.distBeginning > 0;
+		double newDistStart = GeoUtils.getCevianLength(distSource, distEnd, newStart - start, end - newStart);
+		return new Window(newStart, end, newDistStart, distEnd, distSource, halfedge, side);
 	}
 
-	public setEnd(double newEnd) {
-		if (newEnd <= beginning)
-			throw IllegalArgumentException("New end value should be greater than beginning");
+	public Window setEnd(double newEnd) {
+		if (newEnd <= start)
+			throw new IllegalArgumentException("New end value should be greater than start");
 		else if (newEnd > GeoUtils.getHalfedgeLength(this.halfedge))
-			throw IllegalArgumentException("New end value should be non-negative");
+			throw new IllegalArgumentException("New end value should be non-negative");
 
-		this.distEnd = GeoUtils.getCevianLength(distSource, distEnd, newEnd - beginning, end - newEnd);
-		this.end = newEnd;
-
-		assert this.distEnd > 0;
+		double newDistEnd = GeoUtils.getCevianLength(distSource, distEnd, newEnd - start, end - newEnd);
+		return new Window(start, newEnd, distStart, newDistEnd, distSource, halfedge, side);
 	}
 }

@@ -119,11 +119,11 @@ public class ContinuousDijkstra {
 		double halfedgeLength = GeoUtils.getHalfedgeLength(halfedge);
 
 		double dx = halfedgeLength / 100;
-		for (double x = window.getBeginning(); x <= window.getEnd(); x += dx) {
+		for (double x = window.getStart(); x <= window.getEnd(); x += dx) {
 			Point_3 halfedgePoint = GeoUtils.getHalfedgePoint(halfedge, x);
 
 			double distance = destination.distanceFrom(halfedgePoint).doubleValue() + window.getDistSource() +
-				GeoUtils.getCevianLength(window.getDistBeginning(), window.getDistEnd(), x - window.getBeginning(), window.getEnd() - x);
+				GeoUtils.getCevianLength(window.getDistStart(), window.getDistEnd(), x - window.getStart(), window.getEnd() - x);
 
 			if (distance < distanceToSource)
 				distanceToSource = distance;
@@ -164,12 +164,12 @@ public class ContinuousDijkstra {
 					thirdExtremity,
 					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getEnd()).distanceFrom(
 						GeoUtils.getHalfedgePoint(halfedge, secondExtremity)).doubleValue() + window.getDistEnd(),
-					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getBeginning()).distanceFrom(
-						GeoUtils.getHalfedgePoint(halfedge, thirdExtremity)).doubleValue() + window.getDistBeginning(),
+					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getStart()).distanceFrom(
+						GeoUtils.getHalfedgePoint(halfedge, thirdExtremity)).doubleValue() + window.getDistStart(),
 					window.getDistSource(),
 					halfedge,
 					true);
-			mergeWindow(propagatedWindow, pq);
+			insertWindow(propagatedWindow, pq);
 
 			/*
 			 * If the window is adjacent to a saddle/boundary vertex
@@ -186,7 +186,7 @@ public class ContinuousDijkstra {
 						window.getDistEnd() + window.getDistSource(),
 						halfedge,
 						true);
-				mergeWindow(firstExtraWindow, pq);
+				insertWindow(firstExtraWindow, pq);
 
 				halfedge = halfedge.getNext();
 				Window secondExtraWindow = new Window(
@@ -198,10 +198,10 @@ public class ContinuousDijkstra {
 						window.getDistEnd() + window.getDistSource(),
 						halfedge,
 						true);
-				mergeWindow(secondExtraWindow, pq);
+				insertWindow(secondExtraWindow, pq);
 			}
 
-			assert GeoUtils.isPositive(window.getBeginning()) ||
+			assert GeoUtils.isPositive(window.getStart()) ||
 				!isSpecialVertex(propagatingHalfedge.getOpposite().getVertex());
 		} else if (GeoUtils.isNegative(thirdExtremity)) {
 			/* The window propagates to only one window */
@@ -217,18 +217,18 @@ public class ContinuousDijkstra {
 					secondExtremity,
 					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getEnd()).distanceFrom(
 						GeoUtils.getHalfedgePoint(halfedge, firstExtremity)).doubleValue() + window.getDistEnd(),
-					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getBeginning()).distanceFrom(
-						GeoUtils.getHalfedgePoint(halfedge, secondExtremity)).doubleValue() + window.getDistBeginning(),
+					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getStart()).distanceFrom(
+						GeoUtils.getHalfedgePoint(halfedge, secondExtremity)).doubleValue() + window.getDistStart(),
 					window.getDistSource(),
 					halfedge,
 					true);
-			mergeWindow(propagatedWindow, pq);
+			insertWindow(propagatedWindow, pq);
 
 			/*
 			 * If the window is adjacent to a saddle/boundary vertex
 			 * we must propagate through its adjacent edge
 			 */
-			if (GeoUtils.isZero(window.getBeginning()) ||
+			if (GeoUtils.isZero(window.getStart()) ||
 				isSpecialVertex(propagatingHalfedge.getOpposite().getVertex())) {
 				halfedge = propagatingHalfedge.getNext().getNext();
 				Window firstExtraWindow = new Window(
@@ -236,10 +236,10 @@ public class ContinuousDijkstra {
 						GeoUtils.getHalfedgeLength(halfedge),
 						GeoUtils.getHalfedgeLength(halfedge), /* the new pseudosource is the saddle/boundary vertex itself */
 						0,
-						window.getDistBeginning() + window.getDistSource(),
+						window.getDistStart() + window.getDistSource(),
 						halfedge,
 						true);
-				mergeWindow(firstExtraWindow, pq);
+				insertWindow(firstExtraWindow, pq);
 
 				halfedge = propagatingHalfedge.getNext();
 				Window secondExtraWindow = new Window(
@@ -248,10 +248,10 @@ public class ContinuousDijkstra {
 						GeoUtils.getHalfedgePoint(halfedge, secondExtremity).distanceFrom(
 							GeoUtils.getHalfedgeOrigin(propagatingHalfedge)).doubleValue(),
 						GeoUtils.getHalfedgeLength(halfedge.getNext()),
-						window.getDistBeginning() + window.getDistSource(),
+						window.getDistStart() + window.getDistSource(),
 						halfedge,
 						true);
-				mergeWindow(secondExtraWindow, pq);
+				insertWindow(secondExtraWindow, pq);
 			}
 
 			assert GeoUtils.isNegative(window.getEnd() - GeoUtils.getHalfedgeLength(propagatingHalfedge)) ||
@@ -277,7 +277,7 @@ public class ContinuousDijkstra {
 					window.getDistSource(),
 					firstHalfedge,
 					true);
-			mergeWindow(firstPropagatedWindow, pq);
+			insertWindow(firstPropagatedWindow, pq);
 
 			Halfedge<Point_3> secondHalfedge = propagatingHalfedge.getNext().getNext();
 
@@ -288,27 +288,139 @@ public class ContinuousDijkstra {
 					thirdExtremity,
 					GeoUtils.getHalfedgeLength(secondHalfedge),
 					getDistanceToSourcePassingOverWindow(GeoUtils.getHalfedgeOrigin(secondHalfedge), window), // is it really correct?
-					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getBeginning()).distanceFrom(
-						GeoUtils.getHalfedgePoint(secondHalfedge, thirdExtremity)).doubleValue() + window.getDistBeginning(),
+					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getStart()).distanceFrom(
+						GeoUtils.getHalfedgePoint(secondHalfedge, thirdExtremity)).doubleValue() + window.getDistStart(),
 					window.getDistSource(),
 					secondHalfedge,
 					true);
-			mergeWindow(secondPropagatedWindow, pq);
+			insertWindow(secondPropagatedWindow, pq);
 
 			assert !isSpecialVertex(propagatingHalfedge.getVertex()) ||
 				GeoUtils.isNegative(window.getEnd() - GeoUtils.getHalfedgeLength(propagatingHalfedge));
 
 			assert !isSpecialVertex(propagatingHalfedge.getOpposite().getVertex()) ||
-				GeoUtils.isPositive(window.getBeginning());
+				GeoUtils.isPositive(window.getStart());
 		}
 	}
 
-	private void mergeWindow(Window window, PriorityQueue<Window> pq) {
-		return;
+	private void insertWindow(Window newWindow, PriorityQueue<Window> pq) {
+		Halfedge<Point_3> halfedge = newWindow.getHalfedge();
+		ArrayList<Window> oldWindows = halfedgeToWindowsList.get(halfedge);
+		ArrayList<Window> newWindows = new ArrayList<>();
+		assert areWindowsInIncreasingOrder(oldWindows);
+		/*
+		 * This linear scan is too slow, we should optimize
+		 * it using binary search to achieve the time complexity
+		 * mentioned in the article.
+		 */
+		int i = 0;
+		while (i < oldWindows.size()) {
+			Window oldWindow = oldWindows.get(i);
+
+			if (oldWindow.getEnd() <= newWindow.getStart()) {
+				newWindows.add(oldWindow);
+				i++;
+			} else if (newWindow.getEnd() <= oldWindow.getStart()) {
+				break;
+			} else if (newWindow.getStart() < oldWindow.getStart()) {
+				newWindows.add(newWindow.setEnd(oldWindow.getStart()));
+				newWindow = newWindow.setStart(oldWindow.getStart());
+			}  else {
+				Window adjustedWindow = mergeWindows(oldWindow, newWindow);
+				newWindows.add(adjustedWindow);
+
+				if (adjustedWindow.getEnd() < oldWindow.getEnd())
+					oldWindows.set(i, oldWindow.setStart(adjustedWindow.getEnd()));
+				else
+					i++;
+				if (adjustedWindow.getEnd() < newWindow.getEnd()) 
+					newWindow = newWindow.setStart(adjustedWindow.getEnd());
+				else {
+					newWindow = null;
+					break;
+				}
+			}
+		}
+
+		if (newWindow != null)
+			newWindows.add(newWindow);
+		while (i < oldWindows.size())
+			newWindows.add(oldWindows.get(i++));
+
+		halfedgeToWindowsList.put(halfedge, newWindows);
+	}
+
+	private Window mergeWindows(Window leftWindow, Window rightWindow) {
+		assert leftWindow.getStart() <= rightWindow.getStart() &&
+			!areWindowsDisjoint(leftWindow, rightWindow);
+
+		double leftSourceProj = leftWindow.getSourceProjection();
+		double rightSourceProj = rightWindow.getSourceProjection();
+
+		double heightLeftTriangle = GeoUtils.getTriangleHeight(leftWindow.getLength(), leftWindow.getDistStart(), leftWindow.getDistEnd());
+		double heightRightTriangle = GeoUtils.getTriangleHeight(rightWindow.getLength(), rightWindow.getDistStart(), rightWindow.getDistEnd());
+
+		double leftSourceNormSquared = leftSourceProj * leftSourceProj + heightLeftTriangle * heightLeftTriangle;
+		double rightSourceNormSquared = rightSourceProj * rightSourceProj + heightRightTriangle * heightRightTriangle;
+
+		double alpha = rightSourceProj - leftSourceProj;
+		double beta = rightWindow.getDistSource() - leftWindow.getDistSource();
+		double gamma = leftSourceNormSquared - rightSourceNormSquared - beta * beta;
+
+		double A = alpha * alpha - beta * beta;
+		double B = gamma * alpha + 2 * rightSourceProj * beta * beta;
+		double C = 0.25 * gamma * gamma - rightSourceNormSquared * beta * beta;
+
+		double maxPossible = Math.min(leftWindow.getEnd(), rightWindow.getEnd());
+		double solution = getSolutionInRange(GeoUtils.solveSecondDegreeEquation(B / A, C / A), maxPossible);
+
+		double leftWindowTotalDistStart = leftWindow.getDistStart() + leftWindow.getDistSource();
+		double rightWindowTotalDistStart = rightWindow.getDistStart() + rightWindow.getDistSource();
+
+		if (leftWindow.getDistStart() + leftWindow.getDistSource() < rightWindow.getDistStart() + rightWindow.getDistSource()) {
+			if (solution > 0)
+				return leftWindow.setEnd(leftWindow.getStart() + solution);
+			else
+				return leftWindow;
+		}
+		else {
+			if (solution > 0)
+				return rightWindow.setEnd(rightWindow.getStart() + solution);
+			else
+				return rightWindow;
+		}
+	}
+
+	private double getSolutionInRange(Pair<Double, Double> solutions, double maxPossible) {
+		double first = solutions.first();
+		double second = solutions.second();
+		if (first > 0 && first <= maxPossible)
+			return first;
+		if (second > 0 && second <= maxPossible)
+			return second;
+
+		return -1;
+	}
+
+
+	private boolean areWindowsDisjoint(Window leftWindow, Window rightWindow) {
+		return leftWindow.getEnd() <= rightWindow.getStart();
+	}
+
+	private boolean disjointWindows(Window newWindow, Window oldWindow) {
+		return newWindow.getEnd() <= oldWindow.getStart() ||
+			oldWindow.getEnd() <= newWindow.getStart();
+	}
+
+	private boolean areWindowsInIncreasingOrder(ArrayList<Window> windows) {
+		for (int i = 1; i < windows.size(); i++)
+			if (windows.get(i).getStart() < windows.get(i - 1).getEnd())
+				return false;
+		return true;
 	}
 
 	private boolean isSpecialVertex(Vertex<Point_3> vertex) {
-		return false;
+		return true;
 	}
 
 	public ArrayList<Double> getPropagatedExtremities(Window window) {
@@ -320,7 +432,7 @@ public class ContinuousDijkstra {
 		p2 = window.getHalfedge().getNext().getVertex().getPoint();
 		double getHalfedgeLength = GeoUtils.getHalfedgeLength(window.getHalfedge());
 		boolean p20, p21; //p20=true if p2 is on the left side of the window : 
-		Number[] coefficients0 = {1-window.getBeginning() / getHalfedgeLength, window.getBeginning() / getHalfedgeLength };
+		Number[] coefficients0 = {1-window.getStart() / getHalfedgeLength, window.getStart() / getHalfedgeLength };
 		Number[] coefficients1 = {1-window.getEnd()/ getHalfedgeLength, window.getEnd()/ getHalfedgeLength};
 		Point_3[] points = {p0, p1};
 		b0 = Point_3.linearCombination(points, coefficients0);

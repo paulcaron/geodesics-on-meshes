@@ -7,23 +7,23 @@ public final class GeoUtils {
 
 	private GeoUtils() { }
 
-	public static boolean zero(double x) {
+	public static boolean isZero(double x) {
 		return Math.abs(x) <= THRESHOLD;
 	}
 
-	public static boolean positive(double x) {
+	public static boolean isPositive(double x) {
 		return x > THRESHOLD;
 	}
 
-	public static boolean negative(double x) {
+	public static boolean isNegative(double x) {
 		return x < -THRESHOLD;
 	}
 
-	public static boolean equals(double x, double y) {
-		return zero(x - y);
+	public static boolean isEqual(double x, double y) {
+		return isZero(x - y);
 	}
 
-	public static double distancePointHalfedge(Point_3 point, Halfedge<Point_3> halfedge) {
+	public static double getDistanceFromPointToHalfedge(Point_3 point, Halfedge<Point_3> halfedge) {
 		Point_3 a = halfedge.getVertex().getPoint();
 		Point_3 b = halfedge.getOpposite().getVertex().getPoint();
 
@@ -35,7 +35,7 @@ public final class GeoUtils {
 		return Math.sqrt(crossProduct.squaredLength().doubleValue() / ab.squaredLength().doubleValue());
 	}
 
-	public static boolean insideFace(Point_3 point, Face<Point_3> face) {
+	public static boolean isPointOnFace(Point_3 point, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = face.getEdge();
 		Point_3 a = halfedge.getVertex().getPoint();
 
@@ -55,7 +55,7 @@ public final class GeoUtils {
 			{ap.getX().doubleValue(), ap.getY().doubleValue(), ap.getZ().doubleValue()}});
 
 		/* Point point is not in the plane containing face */
-		if (!zero(matrix.det()))
+		if (!isZero(matrix.det()))
 			return false;
 
 		/*
@@ -65,40 +65,40 @@ public final class GeoUtils {
 		matrix = new Matrix(new double[][] {
 			{ab.getX().doubleValue(), ac.getX().doubleValue()},
 			{ab.getY().doubleValue(), ac.getY().doubleValue()}});
-		if (!zero(matrix.det())) {
+		if (!isZero(matrix.det())) {
 			Matrix coeffs = matrix.solve(new Matrix (new double[][] {{ap.getX().doubleValue()}, {ap.getY().doubleValue()}}));
 			double alpha = coeffs.get(0, 0),
 				   beta = coeffs.get(1, 0);
-			return positive(alpha) && positive(beta) && negative(alpha + beta - 1);
+			return isPositive(alpha) && isPositive(beta) && isNegative(alpha + beta - 1);
 		}
 
 		matrix = new Matrix(new double[][] {
 			{ab.getX().doubleValue(), ac.getX().doubleValue()},
 			{ab.getZ().doubleValue(), ac.getZ().doubleValue()}});
-		if (!zero(matrix.det())) {
+		if (!isZero(matrix.det())) {
 			Matrix coeffs = matrix.solve(new Matrix (new double[][] {{ap.getX().doubleValue()}, {ap.getZ().doubleValue()}}));
 			double alpha = coeffs.get(0, 0),
 				   beta = coeffs.get(1, 0);
-			return positive(alpha) && positive(beta) && negative(alpha + beta - 1);
+			return isPositive(alpha) && isPositive(beta) && isNegative(alpha + beta - 1);
 		}
 
 		matrix = new Matrix(new double[][] {
 			{ab.getZ().doubleValue(), ac.getZ().doubleValue()},
 			{ab.getY().doubleValue(), ac.getY().doubleValue()}});
-		if (!zero(matrix.det())) {
+		if (!isZero(matrix.det())) {
 			Matrix coeffs = matrix.solve(new Matrix (new double[][] {{ap.getZ().doubleValue()}, {ap.getY().doubleValue()}}));
 			double alpha = coeffs.get(0, 0),
 				   beta = coeffs.get(1, 0);
-			return positive(alpha) && positive(beta) && negative(alpha + beta - 1);
+			return isPositive(alpha) && isPositive(beta) && isNegative(alpha + beta - 1);
 		}
 
 		return false;
 	}
 
-	public static Halfedge<Point_3> closestHalfedgeFromPoint(Point_3 point, Face<Point_3> face) {
+	public static Halfedge<Point_3> getClosestHalfedgeOfFaceToPoint(Point_3 point, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = face.getEdge();
 		for (int i = 0; i < 3; i++) {
-			if (zero(distancePointHalfedge(point, halfedge)))
+			if (isZero(getDistanceFromPointToHalfedge(point, halfedge)))
 				return halfedge;
 
 			halfedge = halfedge.getNext();
@@ -108,14 +108,14 @@ public final class GeoUtils {
 		return null;
 	}
 
-	public static boolean isHalfedgePoint(Point_3 point, Face<Point_3> face) {
-		return zero(distancePointHalfedge(point, closestHalfedgeFromPoint(point, face)));
+	public static boolean isPointOnHalfedge(Point_3 point, Face<Point_3> face) {
+		return isZero(getDistanceFromPointToHalfedge(point, getClosestHalfedgeOfFaceToPoint(point, face)));
 	}
 
-	public static boolean isFaceVertex(Point_3 point, Face<Point_3> face) {
+	public static boolean isPointVertexOfFace(Point_3 point, Face<Point_3> face) {
 		Halfedge<Point_3> halfedge = face.getEdge();
 		for (int i = 0; i < 3; i++) {
-			if (zero(point.distanceFrom(halfedge.getVertex().getPoint()).doubleValue()))
+			if (isZero(point.distanceFrom(halfedge.getVertex().getPoint()).doubleValue()))
 				return true;
 
 			halfedge = halfedge.getNext();
@@ -129,54 +129,62 @@ public final class GeoUtils {
 	 * Following convention employed by Wikipedia to name triangle sides
 	 * https://en.wikipedia.org/wiki/Stewart's_theorem
 	 */
-	public static double stewart(double b, double c, double n, double m) {
+	public static double getCevianLength(double b, double c, double n, double m) {
 		double a = n + m;
 		double d = Math.sqrt((b * b * m + c * c * n) / a - m * n);
 		assert d >= 0;
 		return d;
 	}
 
-	public static Vector_3 unaryVector(Vector_3 vector) {
+	public static Vector_3 getUnaryVector(Vector_3 vector) {
 		Vector_3 unaryVector = vector.divisionByScalar(Math.sqrt(vector.squaredLength().doubleValue()));
-		assert equals(unaryVector.squaredLength().doubleValue(), 1);
+		assert isEqual(unaryVector.squaredLength().doubleValue(), 1);
 		return unaryVector;
 	}
 
-	public static double lengthHalfedge(Halfedge<Point_3> halfedge) {
+	public static double getHalfedgeLength(Halfedge<Point_3> halfedge) {
 		Vertex<Point_3> destination = halfedge.getVertex();
 		Vertex<Point_3> origin = halfedge.getOpposite().getVertex();
 
 		return (double) destination.getPoint().distanceFrom(origin.getPoint());
 	}
 
-	public static double triangleHeight(double base, double firstSide, double secondSide) {
+	public static double getTriangleHeight(double base, double firstSide, double secondSide) {
 		double p = (base + firstSide + secondSide) / 2;
 		return 2 * Math.sqrt(p * (p - base) * (p - firstSide) * (p - secondSide)) / base;
 	}
 
 	public static Point_3 sumPointVector(Point_3 origin, Vector_3 direction, double norm) {
-		Vector_3 unaryVector = unaryVector(direction);
+		Vector_3 unaryVector = getUnaryVector(direction);
 		Point_3 result = new Point_3(origin);
 		result.translateOf(unaryVector.multiplyByScalar(norm));
 
 		return result;
 	}
 
-	public static Point_3 halfedgeMidpoint(Halfedge<Point_3> halfedge, double norm) {
+	public static Point_3 getHalfedgePoint(Halfedge<Point_3> halfedge, double norm) {
 		Point_3 vectorOrigin = halfedge.getOpposite().getVertex().getPoint();
 		Point_3 vectorEnd = halfedge.getVertex().getPoint();
 		Vector_3 vector = new Vector_3(vectorOrigin, vectorEnd);
 
-		assert equals(vector.squaredLength().doubleValue(), norm * norm);
+		assert isEqual(vector.squaredLength().doubleValue(), norm * norm);
 
 		return sumPointVector(vectorOrigin, vector, norm);
 	}
 
-	public static Point_3 halfedgeOrigin(Halfedge<Point_3> halfedge) {
+	public static Point_3 getHalfedgeOrigin(Halfedge<Point_3> halfedge) {
 		return halfedge.getOpposite().getVertex().getPoint();
 	}
 
-	public static Point_3 halfedgeEnd(Halfedge<Point_3> halfedge) {
+	public static Point_3 getHalfedgeEnd(Halfedge<Point_3> halfedge) {
 		return halfedge.getVertex().getPoint();
+	}
+
+	public static Pair<Double, Double> solveSecondDegreeEquation(double B, double C) {
+		double delta = B * B - 4 * C;
+		if (delta < 0)
+			return new Pair<Double, Double> (Double.MAX_VALUE, Double.MAX_VALUE);
+		double average = - B / 2;
+		return new Pair<Double, Double> (average - 0.5 * Math.sqrt(delta), average + 0.5 * Math.sqrt(delta));
 	}
 }
