@@ -224,9 +224,8 @@ public final class GeoUtils {
 	 * @param sideLeft length of left side of the triangle
 	 * @param sideRight length of right side of the triangle
 	 */
-	public Point_2 getTriangleVertexPlaneProjection(double base, double lengthLeft, double lengthRight) {
-		double cos = Math.pow(lengthLeft, 2) - Math.pow(lengthRight, 2) + Math.pow(base, 2) / \
-					 (2 * lengthLeft * base);
+	public static Point_2 getTriangleVertexPlaneProjection(double base, double lengthLeft, double lengthRight) {
+		double cos = (Math.pow(lengthLeft, 2) - Math.pow(lengthRight, 2) + Math.pow(base, 2)) / (2 * lengthLeft * base);
 		double sin = Math.sqrt(1 - Math.pow(cos, 2));
 
 		double x = lengthLeft * cos;

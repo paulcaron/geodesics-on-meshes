@@ -118,4 +118,8 @@ public class SurfaceMesh {
 	public ArrayList<Vertex<Point_3>> getVertices() {
 		return polyhedron3D.vertices;
 	}
+	
+	public ArrayList<Halfedge<Point_3>> getHalfedges() {
+		return polyhedron3D.halfedges;
+	}
 }

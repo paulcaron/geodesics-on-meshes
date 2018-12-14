@@ -92,7 +92,7 @@ public class Window implements Comparable<Window> {
 	 * the window. The result might be negative.
 	 */
 	public double getAbscisseSourcePlaneProjection() {
-		return GeoUtils.getTriangleVertexPlaneProjection(end - start, distStart, distEnd).getX();
+		return GeoUtils.getTriangleVertexPlaneProjection(end - start, distStart, distEnd).getX().doubleValue();
 	}
 
 	private boolean areBaseAnglesAcute() {
