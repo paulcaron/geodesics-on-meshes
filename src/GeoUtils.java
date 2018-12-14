@@ -101,7 +101,7 @@ public final class GeoUtils {
 		double distFromClosestHalfedge = Double.MAX_VALUE;
 
 		for (int i = 0; i < 3; i++) {
-			double distFromHalfdedge = getDistanceFromPointToHalfedge(point, halfedge)
+			double distFromHalfdedge = getDistanceFromPointToHalfedge(point, halfedge);
 			if (distFromHalfdedge < distFromClosestHalfedge) {
 				distFromClosestHalfedge = distFromHalfdedge;
 				closestHalfedge = halfedge;
@@ -210,5 +210,28 @@ public final class GeoUtils {
 		assert vertex != null;
 
 		return vertex;
+	}
+
+	/*
+	 * Returns the vertex point of a triangle opposite
+	 * to a given triangle side. The origin is supposed to be
+	 * the vertex adjacent to the base and the left side of the
+	 * triangle, with axis Ox-axis supporting the base, and oriented
+	 * from the origin to the other base vertex. The desired vertex is
+	 * admitted to be on the positive half-plane y > 0.
+	 *
+	 * @param base length of side of triangle opposite to desired vertex
+	 * @param sideLeft length of left side of the triangle
+	 * @param sideRight length of right side of the triangle
+	 */
+	public Point_2 getTriangleVertexPlaneProjection(double base, double lengthLeft, double lengthRight) {
+		double cos = Math.pow(lengthLeft, 2) - Math.pow(lengthRight, 2) + Math.pow(base, 2) / \
+					 (2 * lengthLeft * base);
+		double sin = Math.sqrt(1 - Math.pow(cos, 2));
+
+		double x = lengthLeft * cos;
+		double y = lengthLeft * sin;
+
+		return new Point_2(x, y);
 	}
 }

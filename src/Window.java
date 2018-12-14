@@ -91,13 +91,8 @@ public class Window implements Comparable<Window> {
 	 * and x-axis passing through the start and end points of
 	 * the window. The result might be negative.
 	 */
-	public double getSourceProjection() {
-		double height = GeoUtils.getTriangleHeight(end - start, distStart, distEnd);	
-		double projDistance = Math.sqrt(distStart * distStart - height * height);
-
-		if (distEnd * distEnd > (end - start) * (end - start) + distStart * distStart)
-			return -projDistance;
-		return projDistance;
+	public double getAbscisseSourcePlaneProjection() {
+		return GeoUtils.getTriangleVertexPlaneProjection(end - start, distStart, distEnd).getX();
 	}
 
 	private boolean areBaseAnglesAcute() {
@@ -139,4 +134,17 @@ public class Window implements Comparable<Window> {
 		double newDistEnd = GeoUtils.getCevianLength(distSource, distEnd, newEnd - start, end - newEnd);
 		return new Window(start, newEnd, distStart, newDistEnd, distSource, halfedge, side);
 	}
+
+	public Window getOpposite() {
+		double halfedgeLength = GeoUtils.getHalfedgeLength(getHalfedge());
+		return new Window(
+			halfedgeLength - getStart(),
+			halfedgeLength - getEnd(),
+			getDistEnd(),
+			getDistStart(),
+			getDistSource(),
+			getHalfedge().getOpposite(),
+			!getSide());
+	}
+
 }

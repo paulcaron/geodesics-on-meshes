@@ -5,11 +5,10 @@ import java.lang.NullPointerException;
 
 import Jcg.polyhedron.*;
 import Jcg.geometry.*;
-import Jama.*;
 
 public class ContinuousDijkstra {
 	private final SurfaceMesh mesh;
-	private HashMap<Halfedge, ArrayList<Window>> halfedgeToWindowsList;
+	private HashMap<Halfedge<Point_3>, ArrayList<Window>> halfedgeToWindowsList;
 
 	public ContinuousDijkstra(SurfaceMesh mesh) {
 		if (mesh == null)
@@ -24,12 +23,37 @@ public class ContinuousDijkstra {
 
 		PriorityQueue<Window> pq = new PriorityQueue<>();
 
+		initializeHashMap();
 		initializePriorityQueue(source, pq);
 
 		while (!pq.isEmpty()) {
 			Window window = pq.poll();
+			if (isValidWindow(window))
+				propagateWindow(window, pq);
+		}
+	}
+	
+	private boolean isValidWindow(Window window) {
+		ArrayList<Window> windowsList;
+		if (halfedgeToWindowsList.containsKey(window.getHalfedge()))
+			windowsList = halfedgeToWindowsList.get(window.getHalfedge());
+		else
+			windowsList = halfedgeToWindowsList.get(window.getHalfedge().getOpposite());
 
-			propagateWindow(window, pq);
+		for (Window listWindow : windowsList) 
+			if (listWindow == window)
+				return true;
+
+		return false;
+	}
+
+	private void initializeHashMap() {
+		halfedgeToWindowsList = new HashMap<>();
+
+		ArrayList<Halfedge<Point_3>> halfedges = mesh.getHalfedges();
+		for (Halfedge<Point_3> halfedge : halfedges) {
+			if (!halfedgeToWindowsList.containsKey(halfedge.getOpposite()))
+				halfedgeToWindowsList.put(halfedge, new ArrayList<Window>());
 		}
 	}
 
@@ -37,9 +61,49 @@ public class ContinuousDijkstra {
 			Point_3 source,
 			PriorityQueue<Window> pq
 	) {
-		Face<Point_3> face = getFaceContainingPoint(source);
+		if (source == null)
+			throw new NullPointerException("Source point is null");
+		
+		halfedgeToWindowsList = new HashMap<>();	
+		Face<Point_3> faceContainingPoint = getFaceContainingPoint(source);
 
-		return;
+		if (GeoUtils.isPointVertexOfFace(source, faceContainingPoint)) {
+			initializeWithVertex(source, faceContainingPoint, pq);
+		} else if (GeoUtils.isPointOnHalfedge(source, faceContainingPoint)) {
+			initializeWithHalfedgePoint(source, faceContainingPoint, pq);
+		} else {
+			initializeWithFacePoint(source, faceContainingPoint, pq);
+		}
+	}
+
+	private void initializeWithVertex(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
+		Vertex<Point_3> vertex = GeoUtils.identifyVertex(source, face);
+		Halfedge<Point_3> halfedge = vertex.getHalfedge();
+		for (int i = 0; i < 3; i++) {
+			Window window = new Window(
+					0,
+					GeoUtils.getHalfedgeLength(halfedge),
+					GeoUtils.getHalfedgeLength(halfedge),
+					0,
+					0,
+					halfedge,
+					true);
+
+			pq.add(window);
+			ArrayList<Window> newWindowList = new ArrayList<>();
+			newWindowList.add(window);
+			halfedgeToWindowsList.put(halfedge, newWindowList);
+
+			halfedge = halfedge.getNext().getOpposite();
+		}
+	}
+
+	private void initializeWithHalfedgePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
+		throw new AssertionError("Not implemented");
+	}
+
+	private void initializeWithFacePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
+		throw new AssertionError("Not implemented");
 	}
 
 	public double getDistanceToSource(Point_3 destination) {
@@ -59,14 +123,8 @@ public class ContinuousDijkstra {
 
 	/* The destination point is a vertex of face */
 	private double getMinDistanceFromVertexPointToSource(Point_3 destination, Face<Point_3> face) {
-		Halfedge<Point_3> halfedge = face.getEdge();
-		for (int i = 0; i < 3; i++) {
-			if (GeoUtils.isZero(destination.distanceFrom(halfedge.getVertex().getPoint()).doubleValue()))
-				return getDistanceToSourcePassingOverHalfedge(destination, halfedge);
-
-			halfedge = halfedge.getNext();
-		}
-		throw new AssertionError();
+		Vertex<Point_3> vertex = GeoUtils.identifyVertex(destination, face);
+		return getDistanceToSourcePassingOverHalfedge(destination, vertex.getHalfedge());
 	}
 
 	/* The destination point lies on an edge of face */
@@ -135,17 +193,26 @@ public class ContinuousDijkstra {
 
 	private Face<Point_3> getFaceContainingPoint(Point_3 point) {
 		for (Face<Point_3> polyhedronFace : mesh.getFaces()) {
+			Point_3 ponto = polyhedronFace.getEdge().getVertex().getPoint();
+			System.out.println(ponto);
+			
 			if (GeoUtils.isPointOnFace(point, polyhedronFace))
 				return polyhedronFace;
 		}
-
+		
 		throw new IllegalArgumentException("Point " + point.toString() + " not contained in any face of the mesh");
 	}
 
 	private void propagateWindow(Window window, PriorityQueue<Window> pq) {
+		if (!window.getSide())
+			window = window.getOpposite();
+		assert window.getSide();
+
 		ArrayList<Double> propagatedExtremities = getPropagatedExtremities(window);
 		Halfedge<Point_3> propagatingHalfedge = window.getHalfedge();
+
 		assert propagatedExtremities.size() == 3;
+
 		double firstExtremity = propagatedExtremities.get(0);
 		double secondExtremity = propagatedExtremities.get(1);
 		double thirdExtremity = propagatedExtremities.get(2);
@@ -305,13 +372,18 @@ public class ContinuousDijkstra {
 
 	private void insertWindow(Window newWindow, PriorityQueue<Window> pq) {
 		Halfedge<Point_3> halfedge = newWindow.getHalfedge();
+		if (!halfedgeToWindowsList.containsKey(halfedge)) {
+			halfedge = halfedge.getOpposite();
+			newWindow = newWindow.getOpposite();
+		}
+
 		ArrayList<Window> oldWindows = halfedgeToWindowsList.get(halfedge);
 		ArrayList<Window> newWindows = new ArrayList<>();
 		assert areWindowsInIncreasingOrder(oldWindows);
 		/*
 		 * This linear scan is too slow, we should optimize
 		 * it using binary search to achieve the time complexity
-		 * mentioned in the article.
+		 * indicated in the paper.
 		 */
 		int i = 0;
 		while (i < oldWindows.size()) {
@@ -354,8 +426,8 @@ public class ContinuousDijkstra {
 		assert leftWindow.getStart() <= rightWindow.getStart() &&
 			!areWindowsDisjoint(leftWindow, rightWindow);
 
-		double leftSourceProj = leftWindow.getSourceProjection();
-		double rightSourceProj = rightWindow.getSourceProjection();
+		double leftSourceProj = leftWindow.getAbscisseSourcePlaneProjection();
+		double rightSourceProj = rightWindow.getAbscisseSourcePlaneProjection();
 
 		double heightLeftTriangle = GeoUtils.getTriangleHeight(leftWindow.getLength(), leftWindow.getDistStart(), leftWindow.getDistEnd());
 		double heightRightTriangle = GeoUtils.getTriangleHeight(rightWindow.getLength(), rightWindow.getDistStart(), rightWindow.getDistEnd());
@@ -373,9 +445,6 @@ public class ContinuousDijkstra {
 
 		double maxPossible = Math.min(leftWindow.getEnd(), rightWindow.getEnd());
 		double solution = getSolutionInRange(GeoUtils.solveSecondDegreeEquation(B / A, C / A), maxPossible);
-
-		double leftWindowTotalDistStart = leftWindow.getDistStart() + leftWindow.getDistSource();
-		double rightWindowTotalDistStart = rightWindow.getDistStart() + rightWindow.getDistSource();
 
 		if (leftWindow.getDistStart() + leftWindow.getDistSource() < rightWindow.getDistStart() + rightWindow.getDistSource()) {
 			if (solution > 0)
@@ -402,14 +471,8 @@ public class ContinuousDijkstra {
 		return -1;
 	}
 
-
 	private boolean areWindowsDisjoint(Window leftWindow, Window rightWindow) {
 		return leftWindow.getEnd() <= rightWindow.getStart();
-	}
-
-	private boolean disjointWindows(Window newWindow, Window oldWindow) {
-		return newWindow.getEnd() <= oldWindow.getStart() ||
-			oldWindow.getEnd() <= newWindow.getStart();
 	}
 
 	private boolean areWindowsInIncreasingOrder(ArrayList<Window> windows) {
@@ -423,6 +486,16 @@ public class ContinuousDijkstra {
 		return true;
 	}
 
+	public ArrayList<Double> getPropagatedExtremities(Window window) {
+		Halfedge<Point_3> halfedge = window.getHalfedge();
+		double halfedgeLength = halfedge.getHalfedgeLength();
+		Point_2 P0 = new Point_2();
+		Point_2 P1 = new Point_2(halfedgeLength, 0);
+		Point_2 B0 = new Point_2(halfedgeLength - window.getEnd(), 0);
+		Point_2 B1 = new Point_2(halfedgeLength - window.getStart(), 0);
+		Point_2 S = GeoUtils.getTriangleVertexPlaneProjection(window.getLength(), window.distEnd(), window.distStart());
+	}
+	
 	public ArrayList<Double> getPropagatedExtremities(Window window) {
 		ArrayList<Double> arr = new ArrayList<Double>(3);
 		Point_3 p0, p1, p2, b0, b1;
