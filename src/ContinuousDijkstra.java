@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.lang.NullPointerException;
 
 import Jcg.polyhedron.*;
+import sun.net.www.content.audio.x_aiff;
 import Jcg.geometry.*;
 
 public class ContinuousDijkstra {
@@ -89,7 +90,6 @@ public class ContinuousDijkstra {
 		Halfedge<Point_3> halfedge = vertex.getHalfedge();
 		
 		assert allHalfedgesIncluded();
-		//assert isPolyhedronHalfedge(halfedge);
 		do {
 			Window window = new Window(
 					0,
@@ -291,10 +291,15 @@ public class ContinuousDijkstra {
 		double halfedgeLength = GeoUtils.getHalfedgeLength(halfedge);
 
 		double dx = halfedgeLength / 100;
-		for (double x = window.getStart() + dx; x < window.getEnd(); x += dx) {
+		for (double x = window.getStart(); x <= window.getEnd(); x += dx) {
 			Point_3 halfedgePoint = GeoUtils.getHalfedgePoint(halfedge, x);
 
-			double distance = destination.distanceFrom(halfedgePoint).doubleValue() + window.getDistSource() +
+			double distance = destination.distanceFrom(halfedgePoint).doubleValue() + window.getDistSource();
+			if (GeoUtils.isEqual(x, window.getStart()))
+				distance += window.getDistStart();
+			else if (GeoUtils.isEqual(x, window.getEnd()))
+				distance += window.getDistEnd();
+			else
 				GeoUtils.getCevianLength(window.getDistStart(), window.getDistEnd(), x - window.getStart(), window.getEnd() - x);
 
 			if (distance < distanceToSource)
@@ -440,17 +445,35 @@ public class ContinuousDijkstra {
 			 * each in a different edge
 			 */
 			assert GeoUtils.isNegative(secondExtremity);
+			
+			// comecou aqui
+			double halfedgeLength = GeoUtils.getHalfedgeLength(propagatingHalfedge);
+			Point_2 p0 = new Point_2(0, 0);
+			Point_2 p1 = new Point_2(halfedgeLength, 0);
+			Point_2 b0 = new Point_2(halfedgeLength - window.getEnd(), 0);
+			Point_2 source;
+			if (GeoUtils.isZero(window.getDistEnd())) 
+				source = p0;
+			else if (GeoUtils.isZero(window.getDistStart()))
+				source = p1;
+			else
+				source = GeoUtils.getTriangleVertexPlaneProjection(window.getLength(), window.getDistEnd(), window.getDistStart());
+			Point_2 p2 = GeoUtils.getTriangleVertexPlaneProjection(halfedgeLength, GeoUtils.getHalfedgeLength(propagatingHalfedge.getNext()), GeoUtils.getHalfedgeLength(propagatingHalfedge.getNext().getNext()));
+			source.setX(source.getX().doubleValue() + b0.getX().doubleValue());
+			p2.setY(-p2.getY().doubleValue());
+			Vector_2 p2s = new Vector_2(p2, source);
+			// terminou aqui
 
 			Halfedge<Point_3> firstHalfedge = propagatingHalfedge.getNext();
 
 			assert firstExtremity < GeoUtils.getHalfedgeLength(firstHalfedge);
-
+			
 			Window firstPropagatedWindow = new Window(
 					firstExtremity,
 					GeoUtils.getHalfedgeLength(firstHalfedge),
 					GeoUtils.getHalfedgePoint(firstHalfedge, firstExtremity).distanceFrom(
 						GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getEnd())).doubleValue() + window.getDistEnd(),
-					getDistanceToSourcePassingOverWindow(GeoUtils.getHalfedgeEnd(firstHalfedge), window), // is it really correct?
+					Math.sqrt(p2s.squaredLength().doubleValue()), // is it really correct?
 					window.getDistSource(),
 					firstHalfedge,
 					true);
@@ -460,11 +483,11 @@ public class ContinuousDijkstra {
 
 			assert GeoUtils.isPositive(thirdExtremity); 
 			assert !GeoUtils.isPositive(thirdExtremity - GeoUtils.getHalfedgeLength(secondHalfedge));
-
+			
 			Window secondPropagatedWindow = new Window(
+					0,
 					thirdExtremity,
-					GeoUtils.getHalfedgeLength(secondHalfedge),
-					getDistanceToSourcePassingOverWindow(GeoUtils.getHalfedgeOrigin(secondHalfedge), window), // is it really correct?
+					Math.sqrt(p2s.squaredLength().doubleValue()), // is it really correct?
 					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getStart()).distanceFrom(
 						GeoUtils.getHalfedgePoint(secondHalfedge, thirdExtremity)).doubleValue() + window.getDistStart(),
 					window.getDistSource(),
@@ -606,9 +629,7 @@ public class ContinuousDijkstra {
 		Point_2 p1 = new Point_2(halfedgeLength, 0);
 		Point_2 b0 = new Point_2(halfedgeLength - window.getEnd(), 0);
 		Point_2 b1 = new Point_2(halfedgeLength - window.getStart(), 0);
-		Point_2 source;
-		if (GeoUtils.isZero(window.getDistEnd())) source = new Point_2(window.getDistStart(), 0); // degenerate case of the triangle
-		else source = GeoUtils.getTriangleVertexPlaneProjection(window.getLength(), window.getDistEnd(), window.getDistStart());
+		Point_2 source = GeoUtils.getTriangleVertexPlaneProjection(window.getLength(), window.getDistEnd(), window.getDistStart());
 		Point_2 p2 = GeoUtils.getTriangleVertexPlaneProjection(halfedgeLength, GeoUtils.getHalfedgeLength(halfedge.getNext()), GeoUtils.getHalfedgeLength(halfedge.getNext().getNext()));
 		source.setX(source.getX().doubleValue() + b0.getX().doubleValue());
 		p2.setY(-p2.getY().doubleValue());
