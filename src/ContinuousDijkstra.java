@@ -79,8 +79,9 @@ public class ContinuousDijkstra {
 	private void initializeWithVertex(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
 		Vertex<Point_3> vertex = GeoUtils.identifyVertex(source, face);
 		Halfedge<Point_3> halfedge = vertex.getHalfedge();
-		for (int i = 0; i < 3; i++) {
-			Window window = new Window(
+		Halfedge<Point_3> pEdge = halfedge;
+		do {
+			Window window1 = new Window(
 					0,
 					GeoUtils.getHalfedgeLength(halfedge),
 					GeoUtils.getHalfedgeLength(halfedge),
@@ -88,22 +89,82 @@ public class ContinuousDijkstra {
 					0,
 					halfedge,
 					true);
+			Window window2 = new Window(
+					0,
+					GeoUtils.getHalfedgeLength(halfedge),
+					GeoUtils.getHalfedgeLength(halfedge),
+					0,
+					0,
+					halfedge,
+					false);
 
+			pq.add(window1);
+			pq.add(window2);
+			ArrayList<Window> newWindowList = new ArrayList<>();
+			newWindowList.add(window1);
+			newWindowList.add(window2);
+			halfedgeToWindowsList.put(halfedge, newWindowList);
+
+			pEdge = pEdge.getNext().getOpposite();
+		}while(pEdge!=halfedge);
+	}
+
+	private void initializeWithHalfedgePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
+		Halfedge<Point_3> halfedge = face.getEdge();
+		boolean isRightHalfedge = false;
+		while(!isRightHalfedge) {
+			halfedge = halfedge.getNext();
+			Point_3 p1 = halfedge.getVertex().getPoint();
+			Point_3 p2 = halfedge.getOpposite().getVertex().getPoint();
+			Vector_3 v1 = new Vector_3(source, p1);
+			Vector_3 v2 = new Vector_3(source, p2);
+			if(GeoUtils.isZero(v1.crossProduct(v2).squaredLength().doubleValue())) isRightHalfedge = true;
+		}
+		Vector_3 sp0 = new Vector_3(source, halfedge.getOpposite().getVertex().getPoint());
+		Vector_3 sp1 = new Vector_3(source, halfedge.getVertex().getPoint());
+		Window window1 = new Window(
+				0, 
+				GeoUtils.getHalfedgeLength(halfedge),
+				Math.sqrt(sp0.squaredLength().doubleValue()),
+				Math.sqrt(sp1.squaredLength().doubleValue()),
+				0,
+				halfedge,
+				true);
+		Window window2 = new Window(
+				0, 
+				GeoUtils.getHalfedgeLength(halfedge),
+				Math.sqrt(sp0.squaredLength().doubleValue()),
+				Math.sqrt(sp1.squaredLength().doubleValue()),
+				0,
+				halfedge,
+				false);
+		pq.add(window1);
+		pq.add(window2);
+		ArrayList<Window> newWindowList = new ArrayList<>();
+		newWindowList.add(window1);
+		newWindowList.add(window2);
+		halfedgeToWindowsList.put(halfedge, newWindowList);
+	}
+
+	private void initializeWithFacePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
+		Halfedge<Point_3> halfedge = face.getEdge();
+		for (int i = 0; i < 3; i++) {
+			Vector_3 sp0 = new Vector_3(source, halfedge.getOpposite().getVertex().getPoint());
+			Vector_3 sp1 = new Vector_3(source, halfedge.getVertex().getPoint());
+			Window window = new Window(
+					0,
+					GeoUtils.getHalfedgeLength(halfedge),
+					Math.sqrt(sp0.squaredLength().doubleValue()),
+					Math.sqrt(sp1.squaredLength().doubleValue()),
+					0,
+					halfedge,
+					true);
 			pq.add(window);
 			ArrayList<Window> newWindowList = new ArrayList<>();
 			newWindowList.add(window);
 			halfedgeToWindowsList.put(halfedge, newWindowList);
-
-			halfedge = halfedge.getNext().getOpposite();
+			halfedge = halfedge.getNext();
 		}
-	}
-
-	private void initializeWithHalfedgePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
-		throw new AssertionError("Not implemented");
-	}
-
-	private void initializeWithFacePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
-		throw new AssertionError("Not implemented");
 	}
 
 	public double getDistanceToSource(Point_3 destination) {
