@@ -487,40 +487,32 @@ public class ContinuousDijkstra {
 	}
 
 	public ArrayList<Double> getPropagatedExtremities(Window window) {
-		Halfedge<Point_3> halfedge = window.getHalfedge();
-		double halfedgeLength = halfedge.getHalfedgeLength();
-		Point_2 P0 = new Point_2();
-		Point_2 P1 = new Point_2(halfedgeLength, 0);
-		Point_2 B0 = new Point_2(halfedgeLength - window.getEnd(), 0);
-		Point_2 B1 = new Point_2(halfedgeLength - window.getStart(), 0);
-		Point_2 S = GeoUtils.getTriangleVertexPlaneProjection(window.getLength(), window.distEnd(), window.distStart());
-	}
-	
-	public ArrayList<Double> getPropagatedExtremities(Window window) {
 		ArrayList<Double> arr = new ArrayList<Double>(3);
-		Point_3 p0, p1, p2, b0, b1;
-		Point_3 source = window.getSource();
-		p0 = window.getHalfedge().getVertex().getPoint();
-		p1 = window.getHalfedge().getOpposite().getVertex().getPoint();
-		p2 = window.getHalfedge().getNext().getVertex().getPoint();
-		double getHalfedgeLength = GeoUtils.getHalfedgeLength(window.getHalfedge());
-		boolean p20, p21; //p20=true if p2 is on the left side of the window : 
-		Number[] coefficients0 = {1-window.getStart() / getHalfedgeLength, window.getStart() / getHalfedgeLength };
-		Number[] coefficients1 = {1-window.getEnd()/ getHalfedgeLength, window.getEnd()/ getHalfedgeLength};
-		Point_3[] points = {p0, p1};
-		b0 = Point_3.linearCombination(points, coefficients0);
-		b1 = Point_3.linearCombination(points, coefficients1);
-		Vector_3 b0s = new Vector_3(b0, source);
-		Vector_3 b1s = new Vector_3(b1, source);
-		Vector_3 b0p2 = new Vector_3(b0, p2);
-		Vector_3 b1p2 = new Vector_3(b1, p2);
-		Vector_3 p0p2 = new Vector_3(p0, p2);
-		Vector_3 p2p1 = new Vector_3(p2, p1);
-		Vector_3 p0s = new Vector_3(p0, source);
-		Vector_3 p1s = new Vector_3(p1, source);
-		Vector_3 p2s = new Vector_3(p2, source);
-		Vector_3 n0 = new Vector_3(-b0s.getY().doubleValue(), b0s.getX(), 0.);
-		Vector_3 n1 = new Vector_3(-b1s.getY().doubleValue(), b1s.getX(), 0.);
+		
+		Halfedge<Point_3> halfedge = window.getHalfedge();
+		double halfedgeLength = GeoUtils.getHalfedgeLength(halfedge);
+		Point_2 p0 = new Point_2();
+		Point_2 p1 = new Point_2(halfedgeLength, 0);
+		Point_2 b0 = new Point_2(halfedgeLength - window.getEnd(), 0);
+		Point_2 b1 = new Point_2(halfedgeLength - window.getStart(), 0);
+		Point_2 source = GeoUtils.getTriangleVertexPlaneProjection(window.getLength(), window.getDistEnd(), window.getDistStart());
+		Point_2 p2 = GeoUtils.getTriangleVertexPlaneProjection(halfedgeLength, GeoUtils.getHalfedgeLength(halfedge.getNext()), GeoUtils.getHalfedgeLength(halfedge.getNext().getNext()));
+		source.setX(source.getX().doubleValue() + b0.getX().doubleValue());
+		p2.setY(-p2.getY().doubleValue());
+		
+		
+		Vector_2 b0s = new Vector_2(b0, source);
+		Vector_2 b1s = new Vector_2(b1, source);
+		Vector_2 b0p2 = new Vector_2(b0, p2);
+		Vector_2 b1p2 = new Vector_2(b1, p2);
+		Vector_2 p0p2 = new Vector_2(p0, p2);
+		Vector_2 p2p1 = new Vector_2(p2, p1);
+		Vector_2 p0s = new Vector_2(p0, source);
+		Vector_2 p1s = new Vector_2(p1, source);
+		Vector_2 p2s = new Vector_2(p2, source);
+		Vector_2 n0 = new Vector_2(-b0s.getY().doubleValue(), b0s.getX());
+		Vector_2 n1 = new Vector_2(-b1s.getY().doubleValue(), b1s.getX());
+		boolean p20, p21; //p20=true if p2 is on the left side of the window
 		p20 = b0p2.innerProduct(n0).doubleValue() > 0;
 		p21 = b1p2.innerProduct(n1).doubleValue() > 0;
 		if(p20) {
@@ -539,5 +531,8 @@ public class ContinuousDijkstra {
 			arr.set(2, -1.);
 		}
 		return arr;
+		
 	}
+
+	
 }
