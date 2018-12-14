@@ -79,8 +79,9 @@ public class ContinuousDijkstra {
 	private void initializeWithVertex(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
 		Vertex<Point_3> vertex = GeoUtils.identifyVertex(source, face);
 		Halfedge<Point_3> halfedge = vertex.getHalfedge();
-		for (int i = 0; i < 3; i++) {
-			Window window = new Window(
+		Halfedge<Point_3> pEdge = halfedge;
+		do {
+			Window window1 = new Window(
 					0,
 					GeoUtils.getHalfedgeLength(halfedge),
 					GeoUtils.getHalfedgeLength(halfedge),
@@ -88,14 +89,24 @@ public class ContinuousDijkstra {
 					0,
 					halfedge,
 					true);
+			Window window2 = new Window(
+					0,
+					GeoUtils.getHalfedgeLength(halfedge),
+					GeoUtils.getHalfedgeLength(halfedge),
+					0,
+					0,
+					halfedge,
+					false);
 
-			pq.add(window);
+			pq.add(window1);
+			pq.add(window2);
 			ArrayList<Window> newWindowList = new ArrayList<>();
-			newWindowList.add(window);
+			newWindowList.add(window1);
+			newWindowList.add(window2);
 			halfedgeToWindowsList.put(halfedge, newWindowList);
 
-			halfedge = halfedge.getNext().getOpposite();
-		}
+			pEdge = pEdge.getNext().getOpposite();
+		}while(pEdge!=halfedge);
 	}
 
 	private void initializeWithHalfedgePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
