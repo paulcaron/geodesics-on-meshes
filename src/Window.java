@@ -121,7 +121,7 @@ public class Window implements Comparable<Window> {
 		else if (newStart < 0)
 			throw new IllegalArgumentException("New start value should be non-negative");
 
-		double newDistStart = GeoUtils.getCevianLength(distSource, distEnd, newStart - start, end - newStart);
+		double newDistStart = GeoUtils.getCevianLength(distStart, distEnd, newStart - start, end - newStart);
 		return new Window(newStart, end, newDistStart, distEnd, distSource, halfedge, side);
 	}
 
@@ -130,8 +130,8 @@ public class Window implements Comparable<Window> {
 			throw new IllegalArgumentException("New end value should be greater than start");
 		else if (newEnd > GeoUtils.getHalfedgeLength(this.halfedge))
 			throw new IllegalArgumentException("New end value should be non-negative");
-
-		double newDistEnd = GeoUtils.getCevianLength(distSource, distEnd, newEnd - start, end - newEnd);
+		
+		double newDistEnd = GeoUtils.getCevianLength(distStart, distEnd, newEnd - start, end - newEnd);
 		return new Window(start, newEnd, distStart, newDistEnd, distSource, halfedge, side);
 	}
 
