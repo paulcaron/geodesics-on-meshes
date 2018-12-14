@@ -103,7 +103,24 @@ public class ContinuousDijkstra {
 	}
 
 	private void initializeWithFacePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
-		throw new AssertionError("Not implemented");
+		Halfedge<Point_3> halfedge = face.getEdge();
+		for (int i = 0; i < 3; i++) {
+			Vector_3 sp0 = new Vector_3(source, halfedge.getOpposite().getVertex().getPoint());
+			Vector_3 sp1 = new Vector_3(source, halfedge.getVertex().getPoint());
+			Window window = new Window(
+					0,
+					GeoUtils.getHalfedgeLength(halfedge),
+					Math.sqrt(sp0.squaredLength().doubleValue()),
+					Math.sqrt(sp1.squaredLength().doubleValue()),
+					0,
+					halfedge,
+					true);
+			pq.add(window);
+			ArrayList<Window> newWindowList = new ArrayList<>();
+			newWindowList.add(window);
+			halfedgeToWindowsList.put(halfedge, newWindowList);
+			halfedge = halfedge.getNext();
+		}
 	}
 
 	public double getDistanceToSource(Point_3 destination) {
