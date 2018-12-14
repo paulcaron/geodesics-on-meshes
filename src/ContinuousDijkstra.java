@@ -99,7 +99,40 @@ public class ContinuousDijkstra {
 	}
 
 	private void initializeWithHalfedgePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
-		throw new AssertionError("Not implemented");
+		Halfedge<Point_3> halfedge = face.getEdge();
+		boolean isRightHalfedge = false;
+		while(!isRightHalfedge) {
+			halfedge = halfedge.getNext();
+			Point_3 p1 = halfedge.getVertex().getPoint();
+			Point_3 p2 = halfedge.getOpposite().getVertex().getPoint();
+			Vector_3 v1 = new Vector_3(source, p1);
+			Vector_3 v2 = new Vector_3(source, p2);
+			if(GeoUtils.isZero(v1.crossProduct(v2).squaredLength().doubleValue())) isRightHalfedge = true;
+		}
+		Vector_3 sp0 = new Vector_3(source, halfedge.getOpposite().getVertex().getPoint());
+		Vector_3 sp1 = new Vector_3(source, halfedge.getVertex().getPoint());
+		Window window1 = new Window(
+				0, 
+				GeoUtils.getHalfedgeLength(halfedge),
+				Math.sqrt(sp0.squaredLength().doubleValue()),
+				Math.sqrt(sp1.squaredLength().doubleValue()),
+				0,
+				halfedge,
+				true);
+		Window window2 = new Window(
+				0, 
+				GeoUtils.getHalfedgeLength(halfedge),
+				Math.sqrt(sp0.squaredLength().doubleValue()),
+				Math.sqrt(sp1.squaredLength().doubleValue()),
+				0,
+				halfedge,
+				false);
+		pq.add(window1);
+		pq.add(window2);
+		ArrayList<Window> newWindowList = new ArrayList<>();
+		newWindowList.add(window1);
+		newWindowList.add(window2);
+		halfedgeToWindowsList.put(halfedge, newWindowList);
 	}
 
 	private void initializeWithFacePoint(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
