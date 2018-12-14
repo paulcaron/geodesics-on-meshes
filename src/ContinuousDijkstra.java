@@ -1,13 +1,11 @@
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 
-import com.sun.java.swing.plaf.windows.resources.windows;
 
 import java.util.HashMap;
 import java.lang.NullPointerException;
 
 import Jcg.polyhedron.*;
-import sun.net.www.content.audio.x_aiff;
 import Jcg.geometry.*;
 
 public class ContinuousDijkstra {
