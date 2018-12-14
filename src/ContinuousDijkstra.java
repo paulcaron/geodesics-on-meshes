@@ -83,13 +83,6 @@ public class ContinuousDijkstra {
 				return true;
 		return false;
 	}
-	
-	private boolean isPolyhedronHalfedge(Halfedge<Point_3> halfedge) {
-		for (Halfedge<Point_3> hf : mesh.getHalfedges())
-			if (hf == halfedge)
-				return true;
-		return false;
-	}
 
 	private void initializeWithVertex(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
 		Vertex<Point_3> vertex = GeoUtils.identifyVertex(source, face);
@@ -272,7 +265,11 @@ public class ContinuousDijkstra {
 
 	private double getDistanceToSourcePassingOverHalfedge(Point_3 destination, Halfedge<Point_3> halfedge) {
 		double distanceToSource = Double.MAX_VALUE;
-		ArrayList<Window> windowsList = halfedgeToWindowsList.get(halfedge);
+		ArrayList<Window> windowsList;
+		if (halfedgeToWindowsList.containsKey(halfedge))
+			windowsList = halfedgeToWindowsList.get(halfedge);
+		windowsList = halfedgeToWindowsList.get(halfedge.getOpposite());
+		
 		assert windowsList.size() > 0;
 
 		for (int i = 0; i < windowsList.size(); i++) {
@@ -294,7 +291,7 @@ public class ContinuousDijkstra {
 		double halfedgeLength = GeoUtils.getHalfedgeLength(halfedge);
 
 		double dx = halfedgeLength / 100;
-		for (double x = window.getStart(); x <= window.getEnd(); x += dx) {
+		for (double x = window.getStart() + dx; x < window.getEnd(); x += dx) {
 			Point_3 halfedgePoint = GeoUtils.getHalfedgePoint(halfedge, x);
 
 			double distance = destination.distanceFrom(halfedgePoint).doubleValue() + window.getDistSource() +
@@ -310,9 +307,6 @@ public class ContinuousDijkstra {
 
 	private Face<Point_3> getFaceContainingPoint(Point_3 point) {
 		for (Face<Point_3> polyhedronFace : mesh.getFaces()) {
-			Point_3 ponto = polyhedronFace.getEdge().getVertex().getPoint();
-			System.out.println(ponto);
-			
 			if (GeoUtils.isPointOnFace(point, polyhedronFace))
 				return polyhedronFace;
 		}
@@ -626,7 +620,6 @@ public class ContinuousDijkstra {
 		Vector_2 p0p2 = new Vector_2(p0, p2);
 		Vector_2 p2p1 = new Vector_2(p2, p1);
 		Vector_2 p0s = new Vector_2(p0, source);
-		Vector_2 p1s = new Vector_2(p1, source);
 		Vector_2 p2s = new Vector_2(p2, source);
 		Vector_2 n0 = new Vector_2(-b0s.getY().doubleValue(), b0s.getX());
 		Vector_2 n1 = new Vector_2(-b1s.getY().doubleValue(), b1s.getX());

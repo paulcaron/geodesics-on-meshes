@@ -42,8 +42,11 @@ public class MeshViewer extends PApplet {
 
 		origin = mesh.getFaces().get(0).getEdge().getVertex().getPoint();
 		//origin.multiply(50);
-		//Point_3 destination = mesh.getVertices().get(1).getPoint();
+		Point_3 destination = mesh.getVertices().get(1).getPoint();
 		this.continuousDijsktra.buildDistances(origin);
+		double distance = continuousDijsktra.getDistanceToSource(destination);
+
+		System.out.printf("Calculated distance is " + distance + "\n");
 	}
 	
 	public void updatedMethod() {
