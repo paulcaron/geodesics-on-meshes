@@ -594,7 +594,9 @@ public class ContinuousDijkstra {
 		Point_2 p1 = new Point_2(halfedgeLength, 0);
 		Point_2 b0 = new Point_2(halfedgeLength - window.getEnd(), 0);
 		Point_2 b1 = new Point_2(halfedgeLength - window.getStart(), 0);
-		Point_2 source = GeoUtils.getTriangleVertexPlaneProjection(window.getLength(), window.getDistEnd(), window.getDistStart());
+		Point_2 source;
+		if (GeoUtils.isZero(window.getDistEnd())) source = new Point_2(window.getDistStart(), 0); // degenerate case of the triangle
+		else source = GeoUtils.getTriangleVertexPlaneProjection(window.getLength(), window.getDistEnd(), window.getDistStart());
 		Point_2 p2 = GeoUtils.getTriangleVertexPlaneProjection(halfedgeLength, GeoUtils.getHalfedgeLength(halfedge.getNext()), GeoUtils.getHalfedgeLength(halfedge.getNext().getNext()));
 		source.setX(source.getX().doubleValue() + b0.getX().doubleValue());
 		p2.setY(-p2.getY().doubleValue());
