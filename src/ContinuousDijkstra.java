@@ -588,6 +588,13 @@ public class ContinuousDijkstra {
 	public ArrayList<Double> getPropagatedExtremities(Window window) {
 		ArrayList<Double> arr = new ArrayList<Double>(3);
 		
+		if(GeoUtils.isZero(window.getDistStart()) || GeoUtils.isZero(window.getDistEnd())) { // s=p0 or s=p1
+			arr.add(GeoUtils.getHalfedgeLength(window.getHalfedge().getNext()));
+			arr.add(-1.);
+			arr.add(GeoUtils.getHalfedgeLength(window.getHalfedge().getNext().getNext()));
+			return arr;
+		}
+
 		Halfedge<Point_3> halfedge = window.getHalfedge();
 		double halfedgeLength = GeoUtils.getHalfedgeLength(halfedge);
 		Point_2 p0 = new Point_2();
