@@ -33,16 +33,16 @@ public class SurfaceMesh {
 	
 	public void drawSegment(Point_3 p, Point_3 q) {
 		float s = (float) this.scaleFactor;
-		this.view.line(	(float) p.getX().floatValue() * s, (float) p.getY().floatValue() * s, 
-				(float) p.getZ().floatValue() * s, (float) q.getX().floatValue() * s, 
-				(float) q.getY().floatValue() * s, (float) q.getZ().floatValue() * s);
+		this.view.line(p.getX().floatValue() * s, p.getY().floatValue() * s, 
+				p.getZ().floatValue() * s, q.getX().floatValue() * s, 
+				q.getY().floatValue() * s, q.getZ().floatValue() * s);
 	}
 
 	public void drawTriangle(Point_3 p, Point_3 q, Point_3 r) {
 		float s = (float)this.scaleFactor;
-		view.vertex( (float) (p.getX().floatValue() * s), (float) (p.getY().floatValue() * s), (float) (p.getZ().floatValue() * s));
-		view.vertex( (float) (q.getX().floatValue() * s), (float) (q.getY().floatValue() * s), (float) (q.getZ().floatValue() * s));
-		view.vertex( (float) (r.getX().floatValue() * s), (float) (r.getY().floatValue() * s), (float) (r.getZ().floatValue() * s));
+		view.vertex((p.getX().floatValue() * s), (p.getY().floatValue() * s), (p.getZ().floatValue() * s));
+		view.vertex((q.getX().floatValue() * s), (q.getY().floatValue() * s), (q.getZ().floatValue() * s));
+		view.vertex((r.getX().floatValue() * s), (r.getY().floatValue() * s), (r.getZ().floatValue() * s));
 	}
 
 	
@@ -118,7 +118,7 @@ public class SurfaceMesh {
 	public ArrayList<Vertex<Point_3>> getVertices() {
 		return polyhedron3D.vertices;
 	}
-	
+
 	public ArrayList<Halfedge<Point_3>> getHalfedges() {
 		return polyhedron3D.halfedges;
 	}

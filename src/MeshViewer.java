@@ -25,19 +25,25 @@ public class MeshViewer extends PApplet {
 	
 	int simplificationMethod=0;
 	int nMethods=3; // number of simplification methods proposed
+	Point_3 origin;
 	
 	public void setup() {
-		  size(800,600,P3D);
-		  ArcBall arcball = new ArcBall(this);
-		  
-		  this.mesh=new SurfaceMesh(this, filename);
-		  this.ms=new EdgeContraction(this.mesh.getPolyhedron());
-		  //this.ms=new HalfedgeContraction(this.mesh.polyhedron3D);
-		  //this.ms=new QuadricErrorMetrics(this.mesh.polyhedron3D);
-		  
-		  //ms.simplify();
-		  
-		  this.continuousDijsktra = new ContinuousDijkstra(this.mesh);
+		size(800,600,P3D);
+		ArcBall arcball = new ArcBall(this);
+		
+		this.mesh=new SurfaceMesh(this, filename);
+		this.ms=new EdgeContraction(this.mesh.getPolyhedron());
+		//this.ms=new HalfedgeContraction(this.mesh.polyhedron3D);
+		//this.ms=new QuadricErrorMetrics(this.mesh.polyhedron3D);
+		
+		//ms.simplify();
+		
+		this.continuousDijsktra = new ContinuousDijkstra(this.mesh);
+
+		origin = mesh.getFaces().get(0).getEdge().getVertex().getPoint();
+		//origin.multiply(50);
+		//Point_3 destination = mesh.getVertices().get(1).getPoint();
+		this.continuousDijsktra.buildDistances(origin);
 	}
 	
 	public void updatedMethod() {
@@ -69,7 +75,7 @@ public class MeshViewer extends PApplet {
 		  translate(width/2.f,height/2.f,-1*height/2.f);
 		  this.strokeWeight(1);
 		  stroke(150,150,150);
-		  
+		  //sphere(500);
 		  this.mesh.draw();
 		}
 		
