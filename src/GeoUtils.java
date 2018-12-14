@@ -173,8 +173,6 @@ public final class GeoUtils {
 		Point_3 vectorEnd = halfedge.getVertex().getPoint();
 		Vector_3 vector = new Vector_3(vectorOrigin, vectorEnd);
 
-		assert isEqual(vector.squaredLength().doubleValue(), norm * norm);
-
 		return sumPointVector(vectorOrigin, vector, norm);
 	}
 
@@ -225,6 +223,11 @@ public final class GeoUtils {
 	 * @param sideRight length of right side of the triangle
 	 */
 	public static Point_2 getTriangleVertexPlaneProjection(double base, double lengthLeft, double lengthRight) {
+		assert base > 0 && lengthLeft > 0 && lengthRight > 0;
+		assert Math.pow(base, 2) + Math.pow(lengthLeft, 2) <= Math.pow(lengthRight, 2);
+		assert Math.pow(lengthRight, 2) + Math.pow(lengthLeft, 2) <= Math.pow(base, 2);
+		assert Math.pow(base, 2) + Math.pow(lengthRight, 2) <= Math.pow(lengthLeft, 2);
+		
 		double cos = (Math.pow(lengthLeft, 2) - Math.pow(lengthRight, 2) + Math.pow(base, 2)) / (2 * lengthLeft * base);
 		double sin = Math.sqrt(1 - Math.pow(cos, 2));
 

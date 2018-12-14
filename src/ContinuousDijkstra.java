@@ -55,6 +55,8 @@ public class ContinuousDijkstra {
 			if (!halfedgeToWindowsList.containsKey(halfedge.getOpposite()))
 				halfedgeToWindowsList.put(halfedge, new ArrayList<Window>());
 		}
+		
+		assert allHalfedgesIncluded();
 	}
 
 	private void initializePriorityQueue(
@@ -63,8 +65,7 @@ public class ContinuousDijkstra {
 	) {
 		if (source == null)
 			throw new NullPointerException("Source point is null");
-		
-		halfedgeToWindowsList = new HashMap<>();	
+			
 		Face<Point_3> faceContainingPoint = getFaceContainingPoint(source);
 
 		if (GeoUtils.isPointVertexOfFace(source, faceContainingPoint)) {
@@ -75,10 +76,27 @@ public class ContinuousDijkstra {
 			initializeWithFacePoint(source, faceContainingPoint, pq);
 		}
 	}
+	
+	private boolean allHalfedgesIncluded() {
+		for (Halfedge<Point_3> hf : mesh.getHalfedges())
+			if (halfedgeToWindowsList.containsKey(hf) || halfedgeToWindowsList.containsKey(hf.getOpposite()))
+				return true;
+		return false;
+	}
+	
+	private boolean isPolyhedronHalfedge(Halfedge<Point_3> halfedge) {
+		for (Halfedge<Point_3> hf : mesh.getHalfedges())
+			if (hf == halfedge)
+				return true;
+		return false;
+	}
 
 	private void initializeWithVertex(Point_3 source, Face<Point_3> face, PriorityQueue<Window> pq) {
 		Vertex<Point_3> vertex = GeoUtils.identifyVertex(source, face);
 		Halfedge<Point_3> halfedge = vertex.getHalfedge();
+		
+		assert allHalfedgesIncluded();
+		//assert isPolyhedronHalfedge(halfedge);
 		do {
 			Window window = new Window(
 					0,
@@ -431,7 +449,6 @@ public class ContinuousDijkstra {
 
 			Halfedge<Point_3> firstHalfedge = propagatingHalfedge.getNext();
 
-			assert GeoUtils.isPositive(firstExtremity); 
 			assert firstExtremity < GeoUtils.getHalfedgeLength(firstHalfedge);
 
 			Window firstPropagatedWindow = new Window(
@@ -448,7 +465,7 @@ public class ContinuousDijkstra {
 			Halfedge<Point_3> secondHalfedge = propagatingHalfedge.getNext().getNext();
 
 			assert GeoUtils.isPositive(thirdExtremity); 
-			assert thirdExtremity < GeoUtils.getHalfedgeLength(secondHalfedge);
+			assert !GeoUtils.isPositive(thirdExtremity - GeoUtils.getHalfedgeLength(secondHalfedge));
 
 			Window secondPropagatedWindow = new Window(
 					thirdExtremity,
@@ -460,12 +477,6 @@ public class ContinuousDijkstra {
 					secondHalfedge,
 					true);
 			insertWindow(secondPropagatedWindow, pq);
-
-			assert !isSpecialVertex(propagatingHalfedge.getVertex()) ||
-				GeoUtils.isNegative(window.getEnd() - GeoUtils.getHalfedgeLength(propagatingHalfedge));
-
-			assert !isSpecialVertex(propagatingHalfedge.getOpposite().getVertex()) ||
-				GeoUtils.isPositive(window.getStart());
 		}
 	}
 
@@ -589,7 +600,7 @@ public class ContinuousDijkstra {
 		ArrayList<Double> arr = new ArrayList<Double>(3);
 		
 		if(GeoUtils.isZero(window.getDistStart()) || GeoUtils.isZero(window.getDistEnd())) { // s=p0 or s=p1
-			arr.add(GeoUtils.getHalfedgeLength(window.getHalfedge().getNext()));
+			arr.add(0.);
 			arr.add(-1.);
 			arr.add(GeoUtils.getHalfedgeLength(window.getHalfedge().getNext().getNext()));
 			return arr;
@@ -597,7 +608,7 @@ public class ContinuousDijkstra {
 
 		Halfedge<Point_3> halfedge = window.getHalfedge();
 		double halfedgeLength = GeoUtils.getHalfedgeLength(halfedge);
-		Point_2 p0 = new Point_2();
+		Point_2 p0 = new Point_2(0, 0);
 		Point_2 p1 = new Point_2(halfedgeLength, 0);
 		Point_2 b0 = new Point_2(halfedgeLength - window.getEnd(), 0);
 		Point_2 b1 = new Point_2(halfedgeLength - window.getStart(), 0);
@@ -607,7 +618,6 @@ public class ContinuousDijkstra {
 		Point_2 p2 = GeoUtils.getTriangleVertexPlaneProjection(halfedgeLength, GeoUtils.getHalfedgeLength(halfedge.getNext()), GeoUtils.getHalfedgeLength(halfedge.getNext().getNext()));
 		source.setX(source.getX().doubleValue() + b0.getX().doubleValue());
 		p2.setY(-p2.getY().doubleValue());
-		
 		
 		Vector_2 b0s = new Vector_2(b0, source);
 		Vector_2 b1s = new Vector_2(b1, source);
@@ -624,19 +634,19 @@ public class ContinuousDijkstra {
 		p20 = b0p2.innerProduct(n0).doubleValue() > 0;
 		p21 = b1p2.innerProduct(n1).doubleValue() > 0;
 		if(p20) {
-			arr.set(0, -1.);
-			arr.set(1, Math.sqrt(p2p1.squaredLength().doubleValue())*p2s.innerProduct(n0).doubleValue() / p2p1.innerProduct(n0).doubleValue());
-			arr.set(2, Math.sqrt(p2p1.squaredLength().doubleValue())*p2s.innerProduct(n1).doubleValue() / p2p1.innerProduct(n1).doubleValue());
+			arr.add(-1.);
+			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue())*p2s.innerProduct(n0).doubleValue() / p2p1.innerProduct(n0).doubleValue());
+			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue())*p2s.innerProduct(n1).doubleValue() / p2p1.innerProduct(n1).doubleValue());
 		}
 		else if (p21){
-			arr.set(0, Math.sqrt(p0p2.squaredLength().doubleValue())*p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
-			arr.set(1, -1.);
-			arr.set(2, Math.sqrt(p2p1.squaredLength().doubleValue())*p0s.innerProduct(n1).doubleValue() / p2p1.innerProduct(n1).doubleValue());
+			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue())*p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
+			arr.add(-1.);
+			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue())*p0s.innerProduct(n1).doubleValue() / p2p1.innerProduct(n1).doubleValue());
 		}
 		else {
-			arr.set(0, Math.sqrt(p0p2.squaredLength().doubleValue())*p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
-			arr.set(1, Math.sqrt(p0p2.squaredLength().doubleValue())*p0s.innerProduct(n1).doubleValue() / p0p2.innerProduct(n1).doubleValue());
-			arr.set(2, -1.);
+			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue())*p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
+			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue())*p0s.innerProduct(n1).doubleValue() / p0p2.innerProduct(n1).doubleValue());
+			arr.add(-1.);
 		}
 		return arr;
 		

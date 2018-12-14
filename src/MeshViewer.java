@@ -16,10 +16,10 @@ public class MeshViewer extends PApplet {
 	MeshSimplification ms;
 	//String filename="OFF/high_genus.off";
 	//String filename="OFF/sphere.off";
-	//String filename="OFF/cube.off";
+	String filename="OFF/cube.off";
 	//String filename="OFF/torus_33.off";
 	//String filename="OFF/tore.off";
-	String filename="OFF/tri_round_cube.off";
+	//String filename="OFF/tri_round_cube.off";
 	//String filename="OFF/tri_hedra.off";
 	//String filename="OFF/tri_horse.off";
 	
