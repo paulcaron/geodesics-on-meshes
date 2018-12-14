@@ -223,10 +223,15 @@ public final class GeoUtils {
 	 * @param sideRight length of right side of the triangle
 	 */
 	public static Point_2 getTriangleVertexPlaneProjection(double base, double lengthLeft, double lengthRight) {
+		if (isZero(lengthLeft))
+			return new Point_2(0, 0);
+		else if (isZero(lengthRight))
+			return new Point_2(base, 0);
+		
 		assert base > 0 && lengthLeft > 0 && lengthRight > 0;
-		assert Math.pow(base, 2) + Math.pow(lengthLeft, 2) <= Math.pow(lengthRight, 2);
-		assert Math.pow(lengthRight, 2) + Math.pow(lengthLeft, 2) <= Math.pow(base, 2);
-		assert Math.pow(base, 2) + Math.pow(lengthRight, 2) <= Math.pow(lengthLeft, 2);
+		assert base + lengthRight >= lengthLeft;
+		assert base + lengthLeft >= lengthRight;
+		assert lengthLeft + lengthRight >= base;
 		
 		double cos = (Math.pow(lengthLeft, 2) - Math.pow(lengthRight, 2) + Math.pow(base, 2)) / (2 * lengthLeft * base);
 		double sin = Math.sqrt(1 - Math.pow(cos, 2));

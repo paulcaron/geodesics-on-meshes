@@ -1,5 +1,8 @@
 import java.util.ArrayList;
 import java.util.PriorityQueue;
+
+import com.sun.java.swing.plaf.windows.resources.windows;
+
 import java.util.HashMap;
 import java.lang.NullPointerException;
 
@@ -27,10 +30,13 @@ public class ContinuousDijkstra {
 		initializeHashMap();
 		initializePriorityQueue(source, pq);
 
+		int i = 0;
 		while (!pq.isEmpty()) {
 			Window window = pq.poll();
-			if (isValidWindow(window))
+			if (isValidWindow(window)) {
+				System.out.println(i++);
 				propagateWindow(window, pq);
+			}		
 		}
 	}
 	
@@ -338,7 +344,7 @@ public class ContinuousDijkstra {
 
 			Halfedge<Point_3> halfedge = propagatingHalfedge.getNext().getNext();
 
-			assert GeoUtils.isPositive(secondExtremity);
+			assert !GeoUtils.isNegative(secondExtremity);
 			assert secondExtremity < thirdExtremity;
 			assert thirdExtremity <= GeoUtils.getHalfedgeLength(halfedge);
 
@@ -384,14 +390,12 @@ public class ContinuousDijkstra {
 				insertWindow(secondExtraWindow, pq);
 			}
 
-			assert GeoUtils.isPositive(window.getStart()) ||
-				!isSpecialVertex(propagatingHalfedge.getOpposite().getVertex());
 		} else if (GeoUtils.isNegative(thirdExtremity)) {
 			/* The window propagates to only one window */
 
 			Halfedge<Point_3> halfedge = propagatingHalfedge.getNext();
 
-			assert GeoUtils.isPositive(firstExtremity); 
+			assert !GeoUtils.isNegative(firstExtremity); 
 			assert firstExtremity < secondExtremity;
 			assert secondExtremity <= GeoUtils.getHalfedgeLength(halfedge);
 
@@ -436,9 +440,6 @@ public class ContinuousDijkstra {
 						true);
 				insertWindow(secondExtraWindow, pq);
 			}
-
-			assert GeoUtils.isNegative(window.getEnd() - GeoUtils.getHalfedgeLength(propagatingHalfedge)) ||
-				!isSpecialVertex(propagatingHalfedge.getVertex());
 		} else {
 			/* 
 			 * The window propagates to two windows,
@@ -506,7 +507,7 @@ public class ContinuousDijkstra {
 
 		ArrayList<Window> oldWindows = halfedgeToWindowsList.get(halfedge);
 		ArrayList<Window> newWindows = new ArrayList<>();
-		assert areWindowsInIncreasingOrder(oldWindows);
+		//assert areWindowsInIncreasingOrder(oldWindows);
 		/*
 		 * This linear scan is too slow, we should optimize
 		 * it using binary search to achieve the time complexity
@@ -522,17 +523,23 @@ public class ContinuousDijkstra {
 			} else if (newWindow.getEnd() <= oldWindow.getStart()) {
 				break;
 			} else if (newWindow.getStart() < oldWindow.getStart()) {
-				newWindows.add(newWindow.setEnd(oldWindow.getStart()));
+				Window auxWindow = newWindow.setEnd(oldWindow.getStart());
+				pq.add(auxWindow);
+				newWindows.add(auxWindow);
 				newWindow = newWindow.setStart(oldWindow.getStart());
 			}  else {
+				pq.remove(oldWindow);
 				Window adjustedWindow = mergeWindows(oldWindow, newWindow);
 				newWindows.add(adjustedWindow);
+				
+				if (adjustedWindow.compareTo(oldWindow) < 0)
+					pq.add(adjustedWindow);
 
-				if (adjustedWindow.getEnd() < oldWindow.getEnd())
+				if (GeoUtils.isNegative(adjustedWindow.getEnd() - oldWindow.getEnd()))
 					oldWindows.set(i, oldWindow.setStart(adjustedWindow.getEnd()));
 				else
 					i++;
-				if (adjustedWindow.getEnd() < newWindow.getEnd()) 
+				if (GeoUtils.isNegative(adjustedWindow.getEnd() - newWindow.getEnd())) 
 					newWindow = newWindow.setStart(adjustedWindow.getEnd());
 				else {
 					newWindow = null;
@@ -541,8 +548,10 @@ public class ContinuousDijkstra {
 			}
 		}
 
-		if (newWindow != null)
+		if (newWindow != null) {
 			newWindows.add(newWindow);
+			pq.add(newWindow);
+		}
 		while (i < oldWindows.size())
 			newWindows.add(oldWindows.get(i++));
 
@@ -604,8 +613,10 @@ public class ContinuousDijkstra {
 
 	private boolean areWindowsInIncreasingOrder(ArrayList<Window> windows) {
 		for (int i = 1; i < windows.size(); i++)
-			if (windows.get(i).getStart() < windows.get(i - 1).getEnd())
+			if (!GeoUtils.isNegative(windows.get(i).getStart() - windows.get(i - 1).getEnd())) {
+				System.out.printf("%f\n", windows.get(i).getStart() - windows.get(i - 1).getEnd());
 				return false;
+			}
 		return true;
 	}
 

@@ -138,8 +138,8 @@ public class Window implements Comparable<Window> {
 	public Window getOpposite() {
 		double halfedgeLength = GeoUtils.getHalfedgeLength(getHalfedge());
 		return new Window(
-			halfedgeLength - getStart(),
 			halfedgeLength - getEnd(),
+			halfedgeLength - getStart(),
 			getDistEnd(),
 			getDistStart(),
 			getDistSource(),
