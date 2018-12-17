@@ -44,6 +44,17 @@ public class SurfaceMesh {
 		view.vertex((q.getX().floatValue() * s), (q.getY().floatValue() * s), (q.getZ().floatValue() * s));
 		view.vertex((r.getX().floatValue() * s), (r.getY().floatValue() * s), (r.getZ().floatValue() * s));
 	}
+	
+	public void drawVertex(Point_3 p) {
+		float s = (float) this.scaleFactor;
+		float x1=(float)p.getX().doubleValue()*s;
+		float y1=(float)p.getY().doubleValue()*s;
+		float z1=(float)p.getZ().doubleValue()*s;
+		
+		view.translate(x1, y1, z1);
+		view.sphere(s/25f);
+		view.translate(-x1, -y1, -z1);
+	}
 
 	
 	public void draw() {

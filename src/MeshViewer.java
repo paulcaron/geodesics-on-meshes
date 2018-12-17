@@ -85,24 +85,13 @@ public class MeshViewer extends PApplet {
 		  float s = 50;
 		  stroke(200);
 		  
-		  drawVertex(origin);
-		  drawVertex(destination);
-		  stroke(250);
+		  this.mesh.drawVertex(origin);
+		  this.mesh.drawVertex(destination);
 		  this.mesh.drawSegment(origin, destination);
 		  
 		  this.mesh.draw();
 		}
 		
-		public void drawVertex(Point_3 p) {
-			float s = (float) this.mesh.scaleFactor;
-			float x1=(float)p.getX().doubleValue()*s;
-			float y1=(float)p.getY().doubleValue()*s;
-			float z1=(float)p.getZ().doubleValue()*s;
-			
-			translate(x1, y1, z1);
-			sphere(s/25f);
-			translate(-x1, -y1, -z1);
-		}
 		
 		public void keyPressed(){
 			  switch(key) {
