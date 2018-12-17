@@ -15,10 +15,11 @@ public class MeshViewer extends PApplet {
 	ContinuousDijkstra continuousDijsktra;
 	MeshSimplification ms;
 	//String filename="OFF/high_genus.off";
-	String filename="OFF/sphere.off";
+	//String filename="OFF/sphere.off";
+	//String filename="OFF/tetrahedron.off";
 	//String filename="OFF/cube.off";
 	//String filename="OFF/torus_33.off";
-	//String filename="OFF/tore.off";
+	String filename="OFF/tore.off";
 	//String filename="OFF/tri_round_cube.off";
 	//String filename="OFF/tri_hedra.off";
 	//String filename="OFF/tri_horse.off";
@@ -44,7 +45,7 @@ public class MeshViewer extends PApplet {
 
 		origin = mesh.getFaces().get(0).getEdge().getVertex().getPoint();
 		//origin.multiply(50);
-		destination = mesh.getVertices().get(6).getPoint();
+		destination = mesh.getVertices().get(3).getPoint();
 		this.continuousDijsktra.buildDistances(origin);
 		double distance = continuousDijsktra.getDistanceToSource(destination);
 

@@ -352,7 +352,6 @@ public class ContinuousDijkstra {
 			/* The window propagates to only one window */
 
 			Halfedge<Point_3> halfedge = propagatingHalfedge.getNext().getNext();
-			double debug = GeoUtils.getHalfedgeLength(halfedge);
 
 			assert !GeoUtils.isNegative(secondExtremity);
 			assert secondExtremity < thirdExtremity;
@@ -440,7 +439,7 @@ public class ContinuousDijkstra {
 
 				halfedge = propagatingHalfedge.getNext();
 				Window secondExtraWindow = new Window(
-						GeoUtils.getHalfedgeLength(halfedge) - secondExtremity,
+						secondExtremity,
 						GeoUtils.getHalfedgeLength(halfedge),
 						GeoUtils.getHalfedgePoint(halfedge, secondExtremity).distanceFrom(
 							GeoUtils.getHalfedgeOrigin(propagatingHalfedge)).doubleValue(),
@@ -484,7 +483,7 @@ public class ContinuousDijkstra {
 					GeoUtils.getHalfedgeLength(firstHalfedge),
 					GeoUtils.getHalfedgePoint(firstHalfedge, firstExtremity).distanceFrom(
 						GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getEnd())).doubleValue() + window.getDistEnd(),
-					Math.sqrt(p2s.squaredLength().doubleValue()), // is it really correct?
+					Math.sqrt(p2s.squaredLength().doubleValue()), 
 					window.getDistSource(),
 					firstHalfedge,
 					true);
@@ -493,13 +492,12 @@ public class ContinuousDijkstra {
 			Halfedge<Point_3> secondHalfedge = propagatingHalfedge.getNext().getNext();
 
 			assert GeoUtils.isPositive(thirdExtremity);
-			double debug = GeoUtils.getHalfedgeLength(secondHalfedge);
 			assert !GeoUtils.isPositive(thirdExtremity - GeoUtils.getHalfedgeLength(secondHalfedge));
 			
 			Window secondPropagatedWindow = new Window(
 					0,
 					thirdExtremity,
-					Math.sqrt(p2s.squaredLength().doubleValue()), // is it really correct?
+					Math.sqrt(p2s.squaredLength().doubleValue()),
 					GeoUtils.getHalfedgePoint(propagatingHalfedge, window.getStart()).distanceFrom(
 						GeoUtils.getHalfedgePoint(secondHalfedge, thirdExtremity)).doubleValue() + window.getDistStart(),
 					window.getDistSource(),
@@ -718,12 +716,7 @@ public class ContinuousDijkstra {
 		assert !window.getSide();
 		ArrayList<Double> arr = new ArrayList<Double>(3);
 		
-		if(GeoUtils.isZero(window.getDistEnd()+window.getDistStart()-window.getLength())){
-			arr.add(0.);
-			arr.add(-1.);
-			arr.add(GeoUtils.getHalfedgeLength(window.getHalfedge().getNext().getNext()));
-			return arr;
-		}
+		
 
 		Halfedge<Point_3> halfedge = window.getHalfedge();
 		double halfedgeLength = GeoUtils.getHalfedgeLength(halfedge);
@@ -741,6 +734,7 @@ public class ContinuousDijkstra {
 		Vector_2 b0p2 = new Vector_2(b0, p2);
 		Vector_2 b1p2 = new Vector_2(b1, p2);
 		Vector_2 p0p2 = new Vector_2(p0, p2);
+		Vector_2 p0p1 = new Vector_2(p0, p1);
 		Vector_2 p2p1 = new Vector_2(p2, p1);
 		Vector_2 p0s = new Vector_2(p0, source);
 		Vector_2 p2s = new Vector_2(p2, source);
@@ -749,10 +743,19 @@ public class ContinuousDijkstra {
 		boolean p20, p21; //p20=true if p2 is on the left side of the window
 		p20 = b0p2.innerProduct(n0).doubleValue() > 0;
 		p21 = b1p2.innerProduct(n1).doubleValue() > 0;
-		if(p20) {
+		
+		if(GeoUtils.isZero(Math.abs(p0s.innerProduct(p0p1).doubleValue()) - Math.sqrt(p0s.squaredLength().doubleValue()*p0p1.squaredLength().doubleValue())) || GeoUtils.isZero(b0p2.innerProduct(n0).doubleValue()) || GeoUtils.isZero(b1p2.innerProduct(n1).doubleValue())  ){
+			arr.add(0.);
+			arr.add(-1.);
+			arr.add(GeoUtils.getHalfedgeLength(window.getHalfedge().getNext().getNext()));
+		}
+	
+		
+		else if(p20) {
 			arr.add(-1.);
 			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue()) * p2s.innerProduct(n0).doubleValue() / p2p1.innerProduct(n0).doubleValue());
 			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue()) * p2s.innerProduct(n1).doubleValue() / p2p1.innerProduct(n1).doubleValue());
+			assert arr.get(1) < arr.get(2);
 		}
 		else if (p21){
 			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue()) * p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
@@ -763,7 +766,13 @@ public class ContinuousDijkstra {
 			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue()) * p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
 			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue()) * p0s.innerProduct(n1).doubleValue() / p0p2.innerProduct(n1).doubleValue());
 			arr.add(-1.);
+			assert arr.get(0) < arr.get(1);
 		}
+		
+		assert !Double.isNaN(arr.get(0));
+		assert !Double.isNaN(arr.get(1));
+		assert !Double.isNaN(arr.get(2));
+
 		return arr;
 		
 	}
