@@ -626,7 +626,7 @@ public class ContinuousDijkstra {
 		assert !window.getSide();
 		ArrayList<Double> arr = new ArrayList<Double>(3);
 		
-		if(GeoUtils.isPointOnHalfedge(window.getSource(), window.getHalfedge().getFace())){
+		if(GeoUtils.isZero(window.getDistEnd()+window.getDistStart()-window.getLength())){
 			arr.add(0.);
 			arr.add(-1.);
 			arr.add(GeoUtils.getHalfedgeLength(window.getHalfedge().getNext().getNext()));
