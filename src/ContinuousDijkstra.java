@@ -526,17 +526,19 @@ public class ContinuousDijkstra {
 				newWindows.add(auxWindow);
 				newWindow = newWindow.setStart(oldWindow.getStart());
 			}  else {
-				pq.remove(oldWindow);
 				Window adjustedWindow = mergeWindows(oldWindow, newWindow);
 				newWindows.add(adjustedWindow);
 				
-				if (adjustedWindow.compareTo(oldWindow) < 0)
+				if (adjustedWindow != oldWindow)
 					pq.add(adjustedWindow);
 
 				if (GeoUtils.isNegative(adjustedWindow.getEnd() - oldWindow.getEnd()))
 					oldWindows.set(i, oldWindow.setStart(adjustedWindow.getEnd()));
-				else
+				else {
 					i++;
+					if (adjustedWindow != oldWindow)
+						pq.remove(oldWindow);
+				}
 				if (GeoUtils.isNegative(adjustedWindow.getEnd() - newWindow.getEnd())) 
 					newWindow = newWindow.setStart(adjustedWindow.getEnd());
 				else {
@@ -580,7 +582,7 @@ public class ContinuousDijkstra {
 		double maxPossible = Math.min(leftWindow.getEnd(), rightWindow.getEnd());
 		double solution = getSolutionInRange(GeoUtils.solveSecondDegreeEquation(B / A, C / A), maxPossible);
 
-		if (leftWindow.getDistStart() + leftWindow.getDistSource() < rightWindow.getDistStart() + rightWindow.getDistSource()) {
+		if (leftWindow.getDistStart() + leftWindow.getDistSource() <= rightWindow.getDistStart() + rightWindow.getDistSource()) {
 			if (solution > 0)
 				return leftWindow.setEnd(leftWindow.getStart() + solution);
 			else

@@ -3,7 +3,7 @@ import Jcg.geometry.*;
 import Jama.*;
 
 public final class GeoUtils {
-	private static final double THRESHOLD = 1e-9;
+	private static final double THRESHOLD = 1e-6;
 
 	private GeoUtils() { }
 
@@ -230,7 +230,7 @@ public final class GeoUtils {
 		
 		assert base > 0 && lengthLeft > 0 && lengthRight > 0;
 		assert base + lengthRight >= lengthLeft;
-		assert base + lengthLeft >= lengthRight;
+		//assert base + lengthLeft >= lengthRight;
 		assert lengthLeft + lengthRight >= base;
 		
 		double cos = (Math.pow(lengthLeft, 2) - Math.pow(lengthRight, 2) + Math.pow(base, 2)) / (2 * lengthLeft * base);
