@@ -9,7 +9,7 @@ import Jcg.polyhedron.*;
  */
 public class SurfaceMesh {
 	
-	private double scaleFactor = 50;
+	public double scaleFactor = 50;
 	private final MeshViewer view;
 	private Polyhedron_3<Point_3> polyhedron3D;
 	

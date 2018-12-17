@@ -26,6 +26,8 @@ public class MeshViewer extends PApplet {
 	int simplificationMethod=0;
 	int nMethods=3; // number of simplification methods proposed
 	Point_3 origin;
+	Point_3 destination;
+	int renderType = 0;
 	
 	public void setup() {
 		size(800,600,P3D);
@@ -42,11 +44,11 @@ public class MeshViewer extends PApplet {
 
 		origin = mesh.getFaces().get(0).getEdge().getVertex().getPoint();
 		//origin.multiply(50);
-		Point_3 destination = mesh.getVertices().get(1).getPoint();
-		this.continuousDijsktra.buildDistances(origin);
-		double distance = continuousDijsktra.getDistanceToSource(destination);
+		destination = mesh.getVertices().get(1).getPoint();
+		//this.continuousDijsktra.buildDistances(origin);
+		//double distance = continuousDijsktra.getDistanceToSource(destination);
 
-		System.out.printf("Calculated distance is " + distance + "\n");
+		//System.out.printf("Calculated distance is " + distance + "\n");
 	}
 	
 	public void updatedMethod() {
@@ -78,8 +80,28 @@ public class MeshViewer extends PApplet {
 		  translate(width/2.f,height/2.f,-1*height/2.f);
 		  this.strokeWeight(1);
 		  stroke(150,150,150);
-		  //sphere(500);
+		  //translate(origin.getX().floatValue(), origin.getY().floatValue(), origin.getZ().floatValue());
+		  //sphere(10);
+		  float s = 50;
+		  stroke(200);
+		  
+		  drawVertex(origin);
+		  drawVertex(destination);
+		  stroke(250);
+		  this.mesh.drawSegment(origin, destination);
+		  
 		  this.mesh.draw();
+		}
+		
+		public void drawVertex(Point_3 p) {
+			float s = (float) this.mesh.scaleFactor;
+			float x1=(float)p.getX().doubleValue()*s;
+			float y1=(float)p.getY().doubleValue()*s;
+			float z1=(float)p.getZ().doubleValue()*s;
+			
+			translate(x1, y1, z1);
+			sphere(s/25f);
+			translate(-x1, -y1, -z1);
 		}
 		
 		public void keyPressed(){
