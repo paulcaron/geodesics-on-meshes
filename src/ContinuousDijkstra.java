@@ -514,34 +514,111 @@ public class ContinuousDijkstra {
 		int i = 0;
 		while (i < oldWindows.size()) {
 			Window oldWindow = oldWindows.get(i);
-
+			boolean pqContainsOldWindow = pq.contains(oldWindow);
 			if (oldWindow.getEnd() <= newWindow.getStart()) {
 				newWindows.add(oldWindow);
 				i++;
 			} else if (newWindow.getEnd() <= oldWindow.getStart()) {
 				break;
-			} else if (newWindow.getStart() < oldWindow.getStart()) {
+			} 
+			if(GeoUtils.isZero(newWindow.getStart() - oldWindow.getStart())) {
+				
+				double p = mergeWindows(newWindow, oldWindow);
+				if(p<0) {
+					if(newWindow.compareTo(oldWindow) < 0) {
+						
+						if(newWindow.getEnd() < oldWindow.getEnd()) {
+							if(pqContainsOldWindow) pq.remove(oldWindow);
+							oldWindow = oldWindow.setStart(newWindow.getEnd());
+							oldWindows.set(i, oldWindow);
+							if(pqContainsOldWindow) pq.add(oldWindow);
+							
+							break;
+						}
+						else {
+							pq.add(newWindow);
+							if(pqContainsOldWindow) pq.remove(oldWindow);
+							i++;
+						}
+					}
+					else {
+						if(newWindow.getEnd() < oldWindow.getEnd()) {
+							newWindow = null;
+							break;
+						}
+						else {
+							newWindow = newWindow.setStart(oldWindow.getEnd());
+							newWindows.add(oldWindow);
+							i++;
+						}
+					}
+				}
+				else {
+					if(newWindow.getDistSource() + newWindow.getDistStart() < oldWindow.getDistSource() + oldWindow.getDistStart()) {
+						if(newWindow.getEnd() < oldWindow.getEnd()) {
+							newWindow = newWindow.setEnd(p);
+							if(pqContainsOldWindow) pq.remove(oldWindow);
+							oldWindow = oldWindow.setStart(p);
+							if(pqContainsOldWindow) pq.add(oldWindow);
+							break;
+						}
+						else {
+							newWindows.add(newWindow.setEnd(p));
+							pq.add(newWindow.setEnd(p));
+							if(pqContainsOldWindow) pq.remove(oldWindow);
+							oldWindow = oldWindow.setStart(p);
+							if(pqContainsOldWindow) pq.add(oldWindow);
+							newWindows.add(oldWindow);
+							newWindow = newWindow.setStart(oldWindow.getEnd());
+							i++;
+						}
+
+					}
+					else {
+						if(newWindow.getEnd() < oldWindow.getEnd()) {
+							newWindow.setStart(p);
+							if(pqContainsOldWindow) pq.remove(oldWindow);
+							Window newOldWindow = oldWindow;
+							oldWindow = oldWindow.setEnd(p);
+							newOldWindow.setStart(newWindow.getEnd());
+							if(pqContainsOldWindow) {
+								pq.add(oldWindow);
+								pq.add(newOldWindow);
+							}
+							newWindows.add(oldWindow);
+							newWindows.add(newWindow);
+							pq.add(newWindow);
+							newWindows.add(newOldWindow);
+							i++;
+							newWindow = null;
+							break;
+						}
+						else {
+							newWindow = newWindow.setStart(p);
+							if(pqContainsOldWindow) pq.remove(oldWindow);
+							oldWindow = oldWindow.setEnd(p);
+							if(pqContainsOldWindow) pq.add(oldWindow);
+							newWindows.add(oldWindow);
+							i++;
+						}
+					}					
+				}
+				
+			}
+			else if (newWindow.getStart() < oldWindow.getStart()) {
 				Window auxWindow = newWindow.setEnd(oldWindow.getStart());
 				pq.add(auxWindow);
 				newWindows.add(auxWindow);
 				newWindow = newWindow.setStart(oldWindow.getStart());
-			}  else {
-				pq.remove(oldWindow);
-				Window adjustedWindow = mergeWindows(oldWindow, newWindow);
+			}  
+			else {
+				if(pqContainsOldWindow) pq.remove(oldWindow);
+				Window adjustedWindow = oldWindow.setEnd(newWindow.getStart());
 				newWindows.add(adjustedWindow);
-				
-				if (adjustedWindow.compareTo(oldWindow) < 0)
+				oldWindow = oldWindow.setStart(newWindow.getStart());
+				if(pqContainsOldWindow) {
 					pq.add(adjustedWindow);
-
-				if (GeoUtils.isNegative(adjustedWindow.getEnd() - oldWindow.getEnd()))
-					oldWindows.set(i, oldWindow.setStart(adjustedWindow.getEnd()));
-				else
-					i++;
-				if (GeoUtils.isNegative(adjustedWindow.getEnd() - newWindow.getEnd())) 
-					newWindow = newWindow.setStart(adjustedWindow.getEnd());
-				else {
-					newWindow = null;
-					break;
+					pq.add(oldWindow);
 				}
 			}
 		}
@@ -555,51 +632,43 @@ public class ContinuousDijkstra {
 
 		halfedgeToWindowsList.put(halfedge, newWindows);
 	}
+	
+	private double mergeWindows(Window window1, Window window2){ // leftWindows and rightWindows have the same start
+		
+		assert GeoUtils.isZero(window1.getStart() - window2.getStart()) &&
+				!areWindowsDisjoint(window1, window2);
+		
+		double s0x = window1.getAbscisseSourcePlaneProjection() + window1.getStart(); 
+		double s1x = window2.getAbscisseSourcePlaneProjection() + window2.getStart();;
+		
+		double s0y = GeoUtils.getTriangleHeight(window1.getLength(), window1.getDistStart(), window1.getDistEnd());
+		double s1y = GeoUtils.getTriangleHeight(window2.getLength(), window2.getDistStart(), window2.getDistEnd());
 
-	private Window mergeWindows(Window leftWindow, Window rightWindow) {
-		assert leftWindow.getStart() <= rightWindow.getStart() &&
-			!areWindowsDisjoint(leftWindow, rightWindow);
-
-		double leftSourceProj = leftWindow.getAbscisseSourcePlaneProjection();
-		double rightSourceProj = rightWindow.getAbscisseSourcePlaneProjection();
-
-		double heightLeftTriangle = GeoUtils.getTriangleHeight(leftWindow.getLength(), leftWindow.getDistStart(), leftWindow.getDistEnd());
-		double heightRightTriangle = GeoUtils.getTriangleHeight(rightWindow.getLength(), rightWindow.getDistStart(), rightWindow.getDistEnd());
-
-		double leftSourceNormSquared = leftSourceProj * leftSourceProj + heightLeftTriangle * heightLeftTriangle;
-		double rightSourceNormSquared = rightSourceProj * rightSourceProj + heightRightTriangle * heightRightTriangle;
-
-		double alpha = rightSourceProj - leftSourceProj;
-		double beta = rightWindow.getDistSource() - leftWindow.getDistSource();
-		double gamma = leftSourceNormSquared - rightSourceNormSquared - beta * beta;
-
+		double s0squared = s0x * s0x + s0y * s0y;
+		double s1squared = s1x * s1x + s1y * s1y;
+		
+		double alpha = s1x - s0x;
+		double beta = window2.getDistSource() - window1.getDistSource();
+		double gamma = s0squared - s1squared - beta * beta;
+		
 		double A = alpha * alpha - beta * beta;
-		double B = gamma * alpha + 2 * rightSourceProj * beta * beta;
-		double C = 0.25 * gamma * gamma - rightSourceNormSquared * beta * beta;
-
-		double maxPossible = Math.min(leftWindow.getEnd(), rightWindow.getEnd());
-		double solution = getSolutionInRange(GeoUtils.solveSecondDegreeEquation(B / A, C / A), maxPossible);
-
-		if (leftWindow.getDistStart() + leftWindow.getDistSource() < rightWindow.getDistStart() + rightWindow.getDistSource()) {
-			if (solution > 0)
-				return leftWindow.setEnd(leftWindow.getStart() + solution);
-			else
-				return leftWindow;
-		}
-		else {
-			if (solution > 0)
-				return rightWindow.setEnd(rightWindow.getStart() + solution);
-			else
-				return rightWindow;
-		}
+		double B = gamma * alpha + 2 * s1x * beta * beta;
+		double C = 0.25 * gamma * gamma - s1squared * beta * beta;
+		
+		double minPossible = Math.max(window1.getStart(), window2.getStart());
+		double maxPossible = Math.min(window1.getEnd(), window2.getEnd());
+		double solution = getSolutionInRange(GeoUtils.solveSecondDegreeEquation(B / A, C / A), minPossible, maxPossible);
+		
+		return solution;
+		
 	}
 
-	private double getSolutionInRange(Pair<Double, Double> solutions, double maxPossible) {
+	private double getSolutionInRange(Pair<Double, Double> solutions, double minPossible, double maxPossible) {
 		double first = solutions.first();
 		double second = solutions.second();
-		if (first > 0 && first <= maxPossible)
+		if (first >= minPossible && first <= maxPossible)
 			return first;
-		if (second > 0 && second <= maxPossible)
+		if (second >= minPossible && second <= maxPossible)
 			return second;
 
 		return -1;
