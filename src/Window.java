@@ -84,6 +84,14 @@ public class Window implements Comparable<Window> {
 		else
 			return distSource + Math.min(distStart, distEnd);
 	}
+	
+	public boolean isValid() {
+		double l1 = this.distEnd;
+		double l2 = this.distStart;
+		double l3 = this.end - this.start;
+		
+		return l1+l2>=l3 && l1+l3>=l2 && l2+l3 >= l1;
+	}
 
 	/* 
 	 * Calculates and returns the abscissa of the source point
