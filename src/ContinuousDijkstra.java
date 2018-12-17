@@ -272,7 +272,8 @@ public class ContinuousDijkstra {
 		ArrayList<Window> windowsList;
 		if (halfedgeToWindowsList.containsKey(halfedge))
 			windowsList = halfedgeToWindowsList.get(halfedge);
-		windowsList = halfedgeToWindowsList.get(halfedge.getOpposite());
+		else 
+			windowsList = halfedgeToWindowsList.get(halfedge.getOpposite());
 		
 		assert windowsList.size() > 0;
 
