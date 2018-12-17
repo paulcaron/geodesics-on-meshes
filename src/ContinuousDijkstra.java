@@ -324,9 +324,9 @@ public class ContinuousDijkstra {
 	}
 
 	private void propagateWindow(Window window, PriorityQueue<Window> pq) {
-		if (!window.getSide())
+		if (window.getSide())
 			window = window.getOpposite();
-		assert window.getSide();
+		assert !window.getSide();
 
 		ArrayList<Double> propagatedExtremities = getPropagatedExtremities(window);
 		Halfedge<Point_3> propagatingHalfedge = window.getHalfedge();
@@ -623,9 +623,10 @@ public class ContinuousDijkstra {
 	}
 
 	public ArrayList<Double> getPropagatedExtremities(Window window) {
+		assert !window.getSide();
 		ArrayList<Double> arr = new ArrayList<Double>(3);
 		
-		if(GeoUtils.isZero(window.getDistStart()) || GeoUtils.isZero(window.getDistEnd())) { // s=p0 or s=p1
+		if(GeoUtils.isPointOnHalfedge(window.getSource(), window.getHalfedge().getFace())){
 			arr.add(0.);
 			arr.add(-1.);
 			arr.add(GeoUtils.getHalfedgeLength(window.getHalfedge().getNext().getNext()));
