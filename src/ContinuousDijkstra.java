@@ -324,6 +324,9 @@ public class ContinuousDijkstra {
 	}
 
 	private void propagateWindow(Window window, PriorityQueue<Window> pq) {
+		if (GeoUtils.isZero(window.getLength()))
+			return;
+		
 		if (window.getSide())
 			window = window.getOpposite();
 		assert !window.getSide();
@@ -497,6 +500,7 @@ public class ContinuousDijkstra {
 	}
 
 	private void insertWindow(Window newWindow, PriorityQueue<Window> pq) {
+		System.out.println("in");
 		Halfedge<Point_3> halfedge = newWindow.getHalfedge();
 		if (!halfedgeToWindowsList.containsKey(halfedge)) {
 			halfedge = halfedge.getOpposite();
@@ -521,10 +525,18 @@ public class ContinuousDijkstra {
 			} else if (newWindow.getEnd() <= oldWindow.getStart()) {
 				break;
 			} 
-			if(GeoUtils.isZero(newWindow.getStart() - oldWindow.getStart())) {
+			else if(GeoUtils.isZero(newWindow.getStart() - oldWindow.getStart())) {
+				
+				if(GeoUtils.isZero(newWindow.getEnd() - oldWindow.getEnd()) &&
+						GeoUtils.isZero(newWindow.getDistSource() - oldWindow.getDistSource()) &&
+						GeoUtils.isZero(newWindow.getDistStart() - oldWindow.getDistStart()) &&
+						GeoUtils.isZero(newWindow.getDistEnd() - oldWindow.getDistEnd())) {
+					newWindow = null;
+					break;
+				}
 				
 				double p = mergeWindows(newWindow, oldWindow);
-				if(p<0) {
+				if(p < 0) {
 					if(newWindow.compareTo(oldWindow) < 0) {
 						
 						if(newWindow.getEnd() < oldWindow.getEnd()) {
@@ -542,7 +554,7 @@ public class ContinuousDijkstra {
 						}
 					}
 					else {
-						if(newWindow.getEnd() < oldWindow.getEnd()) {
+						if(newWindow.getEnd() <= oldWindow.getEnd()) {
 							newWindow = null;
 							break;
 						}
@@ -562,7 +574,7 @@ public class ContinuousDijkstra {
 							if(pqContainsOldWindow) pq.add(oldWindow);
 							break;
 						}
-						else {
+						else if(newWindow.getEnd() > oldWindow.getEnd()) {
 							newWindows.add(newWindow.setEnd(p));
 							pq.add(newWindow.setEnd(p));
 							if(pqContainsOldWindow) pq.remove(oldWindow);
@@ -571,8 +583,15 @@ public class ContinuousDijkstra {
 							newWindows.add(oldWindow);
 							newWindow = newWindow.setStart(oldWindow.getEnd());
 							i++;
+						} 
+						else {
+							newWindow = newWindow.setEnd(p);
+							if(pqContainsOldWindow) pq.remove(oldWindow);
+							oldWindow = oldWindow.setStart(p);
+							if(pqContainsOldWindow) pq.add(oldWindow);
+							i++;
+							break;
 						}
-
 					}
 					else {
 						if(newWindow.getEnd() < oldWindow.getEnd()) {
@@ -601,11 +620,13 @@ public class ContinuousDijkstra {
 							newWindows.add(oldWindow);
 							i++;
 						}
+						
+
 					}					
 				}
 				
 			}
-			else if (newWindow.getStart() < oldWindow.getStart()) {
+			else if (newWindow.getStart() <= oldWindow.getStart()) {
 				Window auxWindow = newWindow.setEnd(oldWindow.getStart());
 				pq.add(auxWindow);
 				newWindows.add(auxWindow);
@@ -616,6 +637,7 @@ public class ContinuousDijkstra {
 				Window adjustedWindow = oldWindow.setEnd(newWindow.getStart());
 				newWindows.add(adjustedWindow);
 				oldWindow = oldWindow.setStart(newWindow.getStart());
+				oldWindows.set(i, oldWindow);
 				if(pqContainsOldWindow) {
 					pq.add(adjustedWindow);
 					pq.add(oldWindow);
@@ -631,6 +653,7 @@ public class ContinuousDijkstra {
 			newWindows.add(oldWindows.get(i++));
 
 		halfedgeToWindowsList.put(halfedge, newWindows);
+		System.out.println("out");
 	}
 	
 	private double mergeWindows(Window window1, Window window2){ // leftWindows and rightWindows have the same start
@@ -665,9 +688,9 @@ public class ContinuousDijkstra {
 	private double getSolutionInRange(Pair<Double, Double> solutions, double minPossible, double maxPossible) {
 		double first = solutions.first();
 		double second = solutions.second();
-		if (first >= minPossible && first <= maxPossible)
+		if (first > minPossible && first < maxPossible)
 			return first;
-		if (second >= minPossible && second <= maxPossible)
+		if (second > minPossible && second < maxPossible)
 			return second;
 
 		return -1;
