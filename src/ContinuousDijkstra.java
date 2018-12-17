@@ -272,29 +272,35 @@ public class ContinuousDijkstra {
 		ArrayList<Window> windowsList;
 		if (halfedgeToWindowsList.containsKey(halfedge))
 			windowsList = halfedgeToWindowsList.get(halfedge);
-		windowsList = halfedgeToWindowsList.get(halfedge.getOpposite());
+		else
+			windowsList = halfedgeToWindowsList.get(halfedge.getOpposite());
 		
 		assert windowsList.size() > 0;
-
+		
+		Pair<Double, Point_3> optimalPair = null;
 		for (int i = 0; i < windowsList.size(); i++) {
-			double minDistanceForWindow = getDistanceToSourcePassingOverWindow(destination, windowsList.get(i));
+			Pair<Double, Point_3> distancePoint = getDistanceToSourcePassingOverWindow(destination, windowsList.get(i));
 
-			if (minDistanceForWindow < distanceToSource)
+			double minDistanceForWindow = distancePoint.first();
+			if (minDistanceForWindow < distanceToSource) {
 				distanceToSource = minDistanceForWindow;
+				optimalPair = distancePoint;
+			}
 		}
 
-		assert GeoUtils.isPositive(distanceToSource);
-
+		assert !GeoUtils.isNegative(distanceToSource);
+		this.mesh.intermediate = optimalPair.second();
 		return distanceToSource;
 	}
 
-	private double getDistanceToSourcePassingOverWindow(Point_3 destination, Window window) {
+	private Pair<Double, Point_3> getDistanceToSourcePassingOverWindow(Point_3 destination, Window window) {
 		double distanceToSource = Double.MAX_VALUE;
 
 		Halfedge<Point_3> halfedge = window.getHalfedge();
 		double halfedgeLength = GeoUtils.getHalfedgeLength(halfedge);
 
 		double dx = halfedgeLength / 100;
+		double optimalX = window.getStart();
 		for (double x = window.getStart(); x <= window.getEnd(); x += dx) {
 			Point_3 halfedgePoint = GeoUtils.getHalfedgePoint(halfedge, x);
 
@@ -306,12 +312,14 @@ public class ContinuousDijkstra {
 			else
 				distance += GeoUtils.getCevianLength(window.getDistStart(), window.getDistEnd(), x - window.getStart(), window.getEnd() - x);
 
-			if (distance < distanceToSource)
+			if (distance < distanceToSource) {
 				distanceToSource = distance;
+				optimalX = x;
+			}
 		}
-		assert GeoUtils.isPositive(distanceToSource);
+		assert !GeoUtils.isNegative(distanceToSource);
 
-		return distanceToSource;
+		return new Pair<Double, Point_3> (distanceToSource, GeoUtils.getHalfedgePoint(window.getHalfedge(), optimalX));
 	}
 
 	private Face<Point_3> getFaceContainingPoint(Point_3 point) {
@@ -344,10 +352,11 @@ public class ContinuousDijkstra {
 			/* The window propagates to only one window */
 
 			Halfedge<Point_3> halfedge = propagatingHalfedge.getNext().getNext();
+			double debug = GeoUtils.getHalfedgeLength(halfedge);
 
 			assert !GeoUtils.isNegative(secondExtremity);
 			assert secondExtremity < thirdExtremity;
-			assert thirdExtremity <= GeoUtils.getHalfedgeLength(halfedge);
+			assert !GeoUtils.isPositive(thirdExtremity - GeoUtils.getHalfedgeLength(halfedge));
 
 			Window propagatedWindow = new Window(
 					secondExtremity,
@@ -483,7 +492,8 @@ public class ContinuousDijkstra {
 
 			Halfedge<Point_3> secondHalfedge = propagatingHalfedge.getNext().getNext();
 
-			assert GeoUtils.isPositive(thirdExtremity); 
+			assert GeoUtils.isPositive(thirdExtremity);
+			double debug = GeoUtils.getHalfedgeLength(secondHalfedge);
 			assert !GeoUtils.isPositive(thirdExtremity - GeoUtils.getHalfedgeLength(secondHalfedge));
 			
 			Window secondPropagatedWindow = new Window(
@@ -741,17 +751,17 @@ public class ContinuousDijkstra {
 		p21 = b1p2.innerProduct(n1).doubleValue() > 0;
 		if(p20) {
 			arr.add(-1.);
-			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue())*p2s.innerProduct(n0).doubleValue() / p2p1.innerProduct(n0).doubleValue());
-			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue())*p2s.innerProduct(n1).doubleValue() / p2p1.innerProduct(n1).doubleValue());
+			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue()) * p2s.innerProduct(n0).doubleValue() / p2p1.innerProduct(n0).doubleValue());
+			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue()) * p2s.innerProduct(n1).doubleValue() / p2p1.innerProduct(n1).doubleValue());
 		}
 		else if (p21){
-			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue())*p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
+			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue()) * p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
 			arr.add(-1.);
-			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue())*p0s.innerProduct(n1).doubleValue() / p2p1.innerProduct(n1).doubleValue());
+			arr.add(Math.sqrt(p2p1.squaredLength().doubleValue()) * p2s.innerProduct(n1).doubleValue() / p2p1.innerProduct(n1).doubleValue());
 		}
 		else {
-			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue())*p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
-			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue())*p0s.innerProduct(n1).doubleValue() / p0p2.innerProduct(n1).doubleValue());
+			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue()) * p0s.innerProduct(n0).doubleValue() / p0p2.innerProduct(n0).doubleValue());
+			arr.add(Math.sqrt(p0p2.squaredLength().doubleValue()) * p0s.innerProduct(n1).doubleValue() / p0p2.innerProduct(n1).doubleValue());
 			arr.add(-1.);
 		}
 		return arr;

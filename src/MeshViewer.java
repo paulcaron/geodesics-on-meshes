@@ -15,8 +15,8 @@ public class MeshViewer extends PApplet {
 	ContinuousDijkstra continuousDijsktra;
 	MeshSimplification ms;
 	//String filename="OFF/high_genus.off";
-	//String filename="OFF/sphere.off";
-	String filename="OFF/cube.off";
+	String filename="OFF/sphere.off";
+	//String filename="OFF/cube.off";
 	//String filename="OFF/torus_33.off";
 	//String filename="OFF/tore.off";
 	//String filename="OFF/tri_round_cube.off";
@@ -44,11 +44,11 @@ public class MeshViewer extends PApplet {
 
 		origin = mesh.getFaces().get(0).getEdge().getVertex().getPoint();
 		//origin.multiply(50);
-		destination = mesh.getVertices().get(1).getPoint();
-		//this.continuousDijsktra.buildDistances(origin);
-		//double distance = continuousDijsktra.getDistanceToSource(destination);
+		destination = mesh.getVertices().get(6).getPoint();
+		this.continuousDijsktra.buildDistances(origin);
+		double distance = continuousDijsktra.getDistanceToSource(destination);
 
-		//System.out.printf("Calculated distance is " + distance + "\n");
+		System.out.printf("Calculated distance is " + distance + "\n");
 	}
 	
 	public void updatedMethod() {
@@ -87,6 +87,8 @@ public class MeshViewer extends PApplet {
 		  
 		  this.mesh.drawVertex(origin);
 		  this.mesh.drawVertex(destination);
+		  if (this.mesh.intermediate != null)
+			  this.mesh.drawVertex(this.mesh.intermediate);
 		  this.mesh.drawSegment(origin, destination);
 		  
 		  this.mesh.draw();

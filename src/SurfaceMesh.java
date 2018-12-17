@@ -10,6 +10,7 @@ import Jcg.polyhedron.*;
 public class SurfaceMesh {
 	
 	public double scaleFactor = 50;
+	public Point_3 intermediate = null;
 	private final MeshViewer view;
 	private Polyhedron_3<Point_3> polyhedron3D;
 	
