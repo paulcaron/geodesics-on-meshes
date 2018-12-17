@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 
+import com.sun.java.swing.plaf.windows.resources.windows;
 
 import java.util.HashMap;
 import java.lang.NullPointerException;
@@ -272,7 +273,7 @@ public class ContinuousDijkstra {
 		ArrayList<Window> windowsList;
 		if (halfedgeToWindowsList.containsKey(halfedge))
 			windowsList = halfedgeToWindowsList.get(halfedge);
-		else
+		else 
 			windowsList = halfedgeToWindowsList.get(halfedge.getOpposite());
 		
 		assert windowsList.size() > 0;
@@ -472,7 +473,6 @@ public class ContinuousDijkstra {
 			source.setX(source.getX().doubleValue() + b0.getX().doubleValue());
 			p2.setY(-p2.getY().doubleValue());
 			Vector_2 p2s = new Vector_2(p2, source);
-			// terminou aqui
 
 			Halfedge<Point_3> firstHalfedge = propagatingHalfedge.getNext();
 
@@ -508,6 +508,9 @@ public class ContinuousDijkstra {
 	}
 
 	private void insertWindow(Window newWindow, PriorityQueue<Window> pq) {
+		
+		if(!newWindow.isValid()) return;
+		
 		System.out.println("in");
 		Halfedge<Point_3> halfedge = newWindow.getHalfedge();
 		if (!halfedgeToWindowsList.containsKey(halfedge)) {
