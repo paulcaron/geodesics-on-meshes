@@ -611,15 +611,6 @@ public class ContinuousDijkstra {
 		return leftWindow.getEnd() <= rightWindow.getStart();
 	}
 
-	private boolean areWindowsInIncreasingOrder(ArrayList<Window> windows) {
-		for (int i = 1; i < windows.size(); i++)
-			if (!GeoUtils.isNegative(windows.get(i).getStart() - windows.get(i - 1).getEnd())) {
-				System.out.printf("%f\n", windows.get(i).getStart() - windows.get(i - 1).getEnd());
-				return false;
-			}
-		return true;
-	}
-
 	private boolean isSpecialVertex(Vertex<Point_3> vertex) {
 		return true;
 	}
