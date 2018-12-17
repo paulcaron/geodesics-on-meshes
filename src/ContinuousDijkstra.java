@@ -304,7 +304,7 @@ public class ContinuousDijkstra {
 			else if (GeoUtils.isEqual(x, window.getEnd()))
 				distance += window.getDistEnd();
 			else
-				GeoUtils.getCevianLength(window.getDistStart(), window.getDistEnd(), x - window.getStart(), window.getEnd() - x);
+				distance += GeoUtils.getCevianLength(window.getDistStart(), window.getDistEnd(), x - window.getStart(), window.getEnd() - x);
 
 			if (distance < distanceToSource)
 				distanceToSource = distance;
