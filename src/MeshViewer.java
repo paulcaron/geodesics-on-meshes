@@ -1,5 +1,7 @@
 import processing.core.*;
 
+import java.awt.Point;
+
 import Jcg.geometry.*;
 import Jcg.polyhedron.*;
 
@@ -17,11 +19,10 @@ public class MeshViewer extends PApplet {
 	//String filename="OFF/high_genus.off";
 	//String filename="OFF/sphere.off";
 	//String filename="OFF/tetrahedron.off";
-	//String filename="OFF/cube.off";
+	String filename="OFF/cube.off";
 	//String filename="OFF/torus_33.off";
-	String filename="OFF/tore.off";
+	//String filename="OFF/tore.off";
 	//String filename="OFF/tri_round_cube.off";
-	//String filename="OFF/tri_hedra.off";
 	//String filename="OFF/tri_horse.off";
 	
 	int simplificationMethod=0;
@@ -45,7 +46,7 @@ public class MeshViewer extends PApplet {
 
 		origin = mesh.getFaces().get(0).getEdge().getVertex().getPoint();
 		//origin.multiply(50);
-		destination = mesh.getVertices().get(1).getPoint();
+		destination = mesh.getVertices().get(6).getPoint();
 		this.continuousDijsktra.buildDistances(origin);
 		double distance = continuousDijsktra.getDistanceToSource(destination);
 
@@ -84,8 +85,6 @@ public class MeshViewer extends PApplet {
 		  //translate(origin.getX().floatValue(), origin.getY().floatValue(), origin.getZ().floatValue());
 		  //sphere(10);
 		  float s = 50;
-		  stroke(200);
-		  
 		  this.mesh.drawVertex(origin);
 		  this.mesh.drawVertex(destination);
 		  if (this.mesh.intermediate != null)

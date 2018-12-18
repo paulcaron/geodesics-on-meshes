@@ -1,8 +1,6 @@
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 
-import com.sun.java.swing.plaf.windows.resources.windows;
-
 import java.util.HashMap;
 import java.lang.NullPointerException;
 
@@ -12,6 +10,7 @@ import Jcg.geometry.*;
 public class ContinuousDijkstra {
 	private final SurfaceMesh mesh;
 	private HashMap<Halfedge<Point_3>, ArrayList<Window>> halfedgeToWindowsList;
+	int var;
 
 	public ContinuousDijkstra(SurfaceMesh mesh) {
 		if (mesh == null)
@@ -29,11 +28,11 @@ public class ContinuousDijkstra {
 		initializeHashMap();
 		initializePriorityQueue(source, pq);
 
-		int i = 0;
+		var = 0;
 		while (!pq.isEmpty()) {
 			Window window = pq.poll();
 			if (isValidWindow(window)) {
-				System.out.println(i++);
+				System.out.println(var++);
 				propagateWindow(window, pq);
 			}		
 		}
@@ -114,6 +113,26 @@ public class ContinuousDijkstra {
 			}
 			pq.add(window);
 			windowList.add(window);
+			
+			Halfedge<Point_3> oppositeHalfedge = halfedge.getOpposite().getNext();
+			Window oppositeWindow = new Window(
+					0,
+					GeoUtils.getHalfedgeLength(oppositeHalfedge),
+					GeoUtils.getHalfedgeLength(halfedge),
+					GeoUtils.getHalfedgeLength(oppositeHalfedge.getNext()),
+					0,
+					oppositeHalfedge,
+					true);
+			if (halfedgeToWindowsList.containsKey(oppositeHalfedge)) {
+				windowList = halfedgeToWindowsList.get(oppositeHalfedge);
+			}
+			else {
+				windowList = halfedgeToWindowsList.get(oppositeHalfedge.getOpposite());
+				oppositeWindow = oppositeWindow.getOpposite();
+			}
+			pq.add(oppositeWindow);
+			windowList.add(oppositeWindow);
+			
 			halfedge = halfedge.getNext().getOpposite();
 		}while(halfedge != vertex.getHalfedge());
 	}
@@ -528,6 +547,10 @@ public class ContinuousDijkstra {
 		 */
 		int i = 0;
 		while (i < oldWindows.size()) {
+			if (!newWindow.isValid()) {
+				newWindow = null;
+				break;
+			}
 			Window oldWindow = oldWindows.get(i);
 			boolean pqContainsOldWindow = pq.contains(oldWindow);
 			if (oldWindow.getEnd() <= newWindow.getStart()) {

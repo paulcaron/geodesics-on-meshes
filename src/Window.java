@@ -90,7 +90,20 @@ public class Window implements Comparable<Window> {
 		double l2 = this.distStart;
 		double l3 = this.end - this.start;
 		
-		return l1+l2>=l3 && l1+l3>=l2 && l2+l3 >= l1;
+		if (Double.isNaN(l1) || Double.isNaN(l2) || Double.isNaN(l3))
+			return false;	
+		if (l1 + l2 < l3)
+			return false;
+		if (l1 + l3 < l2)
+			return false;
+		if (l2 + l3 < l1)
+			return false;
+		if (l1 < 0 || l2 < 0 || l3 < 0)
+			return false;
+		if (l3 == 0)
+			return false;
+
+		return true;
 	}
 
 	/* 
